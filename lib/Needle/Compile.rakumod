@@ -38,7 +38,7 @@ deal to me!
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2020, 2021, 2022, 2024 Elizabeth Mattijsen
+Copyright 2024 Elizabeth Mattijsen
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
