@@ -1,0 +1,8 @@
+use Test;
+use Needle::Compile;
+
+pass "replace me";
+
+done-testing;
+
+# vim: expandtab shiftwidth=4
