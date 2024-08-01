@@ -4,7 +4,7 @@ use v6.*;  # Until 6.e is default
 
 use has-word:ver<0.0.4+>:auth<zef:lizmat>;      # has-word
 use String::Utils:ver<0.0.24+>:auth<zef:lizmat> <
-  non-word has-marks is-lowercase
+  has-marks is-lowercase non-word nomark
 >;
 
 #-------------------------------------------------------------------------------# Helper subs
@@ -130,11 +130,14 @@ my multi sub handle(Str:D $_, %nameds) {
 
 # The "auto" distributors
 my multi sub handle("auto", Str:D $_, %_) {
-    if .starts-with('§') {
+    if .starts-with('!') {
+        handle "not", .substr(1), %_
+    }
+    elsif .starts-with('§') {
         handle "words", .substr(1), %_
     }
     elsif .starts-with('*') {
-        handle "code", .substr(1), %{}
+        handle "code", '$_' ~ .substr(1), %()
     }
     elsif .starts-with('{') && .ends-with('}') {
         handle "code", .substr(1, *-1), %_
@@ -160,13 +163,37 @@ my multi sub handle("auto", Str:D $_, %_) {
 
 # Handlers that build custom ASTs
 my multi sub handle("code", Str:D $spec, %_) {
-    $spec.AST
+    my $ast        := $spec.AST;
+    my @statements := $ast.statements;
+    @statements == 1
+      ?? @statements.head.expression
+      !! $ast
 }
 my multi sub handle("equal", Str:D $spec, %_) {
+    my $left  := $spec;
+    my $right := RakuAST::Var::Lexical.new("\$_");
+
+    if ignorecase($spec, %_) {
+        $left  := $spec.fc;
+        $right := RakuAST::Term::TopicCall.new(
+          RakuAST::Call::Method.new(
+            name => RakuAST::Name.from-identifier("fc")
+          )
+        );
+    }
+
+    if ignoremark($spec, %_) {
+        $left  := nomark($spec);
+        $right := RakuAST::Call::Name.new(
+          name => RakuAST::Name.from-identifier("nomark"),
+          args => RakuAST::ArgList.new($right)
+        )
+    }
+
     RakuAST::ApplyInfix.new(
-      left  => RakuAST::StrLiteral.new($spec),
+      left  => RakuAST::StrLiteral.new($left),
       infix => RakuAST::Infix.new("eq"),
-      right => RakuAST::Var::Lexical.new("\$_")
+      right => $right
     )
 }
 my multi sub handle("regex", Str:D $spec is copy, %_) {
@@ -192,18 +219,26 @@ my multi sub handle("starts-with", Str:D $spec, %_) {
     make-method "starts-with", $spec, %_
 }
 my multi sub handle("words", Str:D $spec, %_) {
-    RakuAST::Call::Name.new(
-      name => RakuAST::Name.from-identifier("has-word"),
-      args => RakuAST::ArgList.new(
-        RakuAST::Var::Lexical.new("\$_"),
-        RakuAST::StrLiteral.new($spec),
-      )
-    )
+    non-word($spec)
+      ?? fail("Cannot use word semantics on '$spec'")
+      !! RakuAST::Call::Name.new(
+           name => RakuAST::Name.from-identifier("has-word"),
+           args => RakuAST::ArgList.new(
+             RakuAST::Var::Lexical.new("\$_"),
+             RakuAST::StrLiteral.new($spec),
+           )
+         )
 }
 
 # Handlers that modify other handlers
 my multi sub handle("not", Any:D $spec, %_) {
-    prefix-not handle $spec, %_
+    my $ast := handle $spec, %_;
+    if $ast ~~ RakuAST::StatementList {
+        NYI "wrapping on multiple statements in not";
+    }
+    else {
+        prefix-not $ast
+    }
 }
 
 # Huh?
@@ -232,8 +267,8 @@ my sub compile-needle(*@spec, *%_) is export {
     }
 }
 
-my $needle := compile-needle "§foo", :smartcase;
-say $needle("foo");
-say $needle("bar foob");
+#my $needle := compile-needle '^foo$', :smartcase;
+#say $needle("FOO");
+#say $needle("bar foob");
 
 # vim: expandtab shiftwidth=4

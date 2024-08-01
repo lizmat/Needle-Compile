@@ -25,6 +25,134 @@ that can be called with a given haystack to see if there is a match.
 It can as such be used as the argument to the C<rak> subroutine provided
 by the L<C<rak>|https://raku.land/zef:lizmat/rak> distribution.
 
+=head1 SEARCH QUERY SPECIFICATION
+
+A query can consist of multiple needles of different types.  A type of
+needle can be specified in 3 ways:
+
+=item implicitely
+
+By using textual markers at the start and end of the given string needle
+(see: type is "auto").
+
+=item explicitely
+
+By specifying a needle as a C<Pair>, with the key being a string describing
+the type.
+
+=item mixed in
+
+If the needle specified supports a C<.type> method, then that method will
+be called to determine the type.
+
+=head2 Modifiers
+
+Many types of matches support C<ignorecase> and C<ignoremark> semantics.
+These can be specified explicitely (with the C<:ignorecase> and
+C<:ignoremark> named arguments), or implicitely with the C<:smartcase>
+and C<:smartmark> named arguments.
+
+=item smartcase
+
+If the needle is a string and does B<not> contain any uppercase characters,
+then C<ignorecase> semantics will be assumed.
+
+=item smartmark
+
+If the needle is a string and does B<not> contain any characters with accents,
+then C<ignoremark> semantics will be assumed.
+
+=head2 Types of matches
+
+=head3 auto
+
+This is the default type of match.  It looks at the given string for a
+number of markers, and adjust the type of match and the string accordingly.
+The following markers are recognized:
+
+=item starts with !
+
+This is a meta-marker.  Assumes the string given (without the C<!>) should
+be processed, and its result negated (see: type is "not")
+
+=item starts with §
+
+Assumes the string given (without the C<§>) should match with
+word-boundary semantics applied (see: type is "code").
+
+=item starts with *
+
+Assumes the given string is a valid C<WhateverCode> specification and
+attempts to produce that specification accordingly (see: type is "code").
+
+=item starts with ^
+
+Assumes the string given (without the C<^>) should match with
+C<.starts-with> semantics applied (see: type is "starts-with").
+
+=item ends with $
+
+Assumes the string given (without the C<$>) should match with
+C<.ends-with> semantics applied (see: type is "ends-with").
+
+=item starts with ^ and ends with $
+
+Assumes the string given (without the C<^> and C<$>) should match exactly
+(see: type is "equal").
+
+=item starts with / and ends with /
+
+Assumes the string given (without the C</>'s) is a regex and attempts
+to produce a C<Regex> object and wraps that in a call to C<.contains>
+(see: type is "regex").
+
+=item starts with { and ends with }
+
+Assumes the string given (without the C<{> and C<}>) is an expression
+and attempts to produce the code (see: type is "code").
+
+=item none of the above
+
+Assumes the string given should match with C<.contains> semantics
+applied (see: type is "contains").
+
+=head3 code
+
+Assumes the string is an expression and attempts to produce that code,
+with the haystack being presented as the topic (C<$_>).
+
+=head3 contains
+
+Assumes the string is a needle in a call to C<.contains>.
+
+=head3 ends-with
+
+Assumes the string is a needle in a call to C<.ends-with>.
+
+=head3 equal
+
+Assumes the string is a needle to compare with the haystack using infix
+C<eq> semantics.
+
+=head3 not
+
+This is a meta-type: it inverts the result of the result of matching
+of the given needle (which can be anything otherwise acceptable).
+
+=head3 regex
+
+Assumes the string is a regex specification to be used as a needle in a
+call to C<.contains>.
+
+=head3 starts-with
+
+Assumes the string is a needle in a call to C<.starts-with>.
+
+=head3 words
+
+Assumes the string is a needle that will match if the needle is found
+with word-boundaries on eiher side of the needle.
+
 =head1 AUTHOR
 
 Elizabeth Mattijsen <liz@raku.rocks>
