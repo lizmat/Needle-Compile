@@ -251,20 +251,32 @@ my multi sub handle(Str:D $type, Any:D $spec, %_) {
 #-------------------------------------------------------------------------------
 # The frontend
 
-my sub compile-needle(*@spec, *%_) is export {
+my proto sub compile-needle(|) is export {*}
+
+my multi sub compile-needle(*%_) {
+    if %_ {
+        if %_ == 1 {
+            wrap-in-block(handle %_.head).EVAL
+        }
+        else {
+            fail "Can only specify one pair as a named argument";
+        }
+    }
+    else {
+        fail "Must specify at least one needle";
+    }
+}
+
+my multi sub compile-needle(*@spec, *%_) {
     my @nodes = @spec.map: { handle $_, %_ }
 
     if @nodes == 1 {
 #say @nodes.head;
         wrap-in-block(@nodes.head).EVAL
     }
-    else {
+    elsif @nodes {
         NYI "multiple needles"
     }
 }
-
-#my $needle := compile-needle '^foo$', :smartcase;
-#say $needle("FOO");
-#say $needle("bar foob");
 
 # vim: expandtab shiftwidth=4

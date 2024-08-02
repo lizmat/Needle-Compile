@@ -9,7 +9,7 @@
     "has-word:ver<0.0.4+>:auth<zef:lizmat>",
     "String::Utils:ver<0.0.24+>:auth<zef:lizmat>"
   ],
-  "description": "compile a search needle specification",
+  "description": "Compile a search needle specification",
   "license": "Artistic-2.0",
   "name": "Needle::Compile",
   "perl": "6.d",
@@ -20,6 +20,10 @@
   ],
   "source-url": "https://github.com/lizmat/Needle-Compile.git",
   "tags": [
+    "SEARCHING",
+    "CLI",
+    "RAKUAST",
+    "RAK"
   ],
   "test-depends": [
   ],

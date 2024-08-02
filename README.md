@@ -3,7 +3,7 @@
 NAME
 ====
 
-Needle::Compile - compile a search needle specification
+Needle::Compile - Compile a search needle specification
 
 SYNOPSIS
 ========
@@ -119,12 +119,8 @@ This is the default type of match. It looks at the given string for a number of 
 #### starts with !
 
 ```raku
-my role Type { has $.type }
-
 # accept haystack if "bar" is NOT found
-my &implicit = compile-needle("!bar");
-my &bypair   = compile-needle("not" => "bar");
-my &mixedin  = compile-needle("bar" but Type<not>);
+my &needle = compile-needle('!bar');
 ```
 
 This is a meta-marker. Assumes the string given (without the `!`) should be processed, and its result negated (see: type is "not")
@@ -132,15 +128,20 @@ This is a meta-marker. Assumes the string given (without the `!`) should be proc
 #### starts with §
 
 ```raku
-
+# accept haystack if "bar" is found as a word
+my &needle = compile-needle('§bar');
 ```
 
-Assumes the string given (without the `§`) should match with word-boundary semantics applied (see: type is "code").
+Assumes the string given (without the `§`) should match with word-boundary semantics applied (see: type is "words").
 
 #### starts with *
 
 ```raku
+# accept haystack if alphabetically before "bar"
+my &is-before = compile-needle('* before "bar"');
 
+# return every haystack uppercased
+my &uppercased = compile-needle('*.uc');
 ```
 
 Assumes the given string is a valid `WhateverCode` specification and attempts to produce that specification accordingly (see: type is "code").
@@ -148,7 +149,8 @@ Assumes the given string is a valid `WhateverCode` specification and attempts to
 #### starts with ^
 
 ```raku
-
+# accept haystack if it starts with "bar"
+my &needle = compile-needle('^bar');
 ```
 
 Assumes the string given (without the `^`) should match with `.starts-with` semantics applied (see: type is "starts-with").
@@ -156,7 +158,8 @@ Assumes the string given (without the `^`) should match with `.starts-with` sema
 #### ends with $
 
 ```raku
-
+# accept haystack if it ends with "bar"
+my &needle = compile-needle('bar$');
 ```
 
 Assumes the string given (without the `$`) should match with `.ends-with` semantics applied (see: type is "ends-with").
@@ -164,7 +167,8 @@ Assumes the string given (without the `$`) should match with `.ends-with` semant
 #### starts with ^ and ends with $
 
 ```raku
-
+# accept haystack if it is equal to "bar"
+my &needle = compile-needle('^bar$');
 ```
 
 Assumes the string given (without the `^` and `$`) should match exactly (see: type is "equal").
@@ -172,7 +176,8 @@ Assumes the string given (without the `^` and `$`) should match exactly (see: ty
 #### starts with / and ends with /
 
 ```raku
-
+# accept haystack if it matches "bar" as a regular expression
+my &needle = compile-needle('/bar/');
 ```
 
 Assumes the string given (without the `/`'s) is a regex and attempts to produce a `Regex` object and wraps that in a call to `.contains` (see: type is "regex").
@@ -180,7 +185,8 @@ Assumes the string given (without the `/`'s) is a regex and attempts to produce 
 #### starts with { and ends with }
 
 ```raku
-
+# return the lowercased, whitespace trimmed haystack
+my &needle = compile-needle('{.trim.lc}');
 ```
 
 Assumes the string given (without the `{` and `}`) is an expression and attempts to produce the code (see: type is "code").

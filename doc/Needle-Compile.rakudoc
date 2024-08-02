@@ -145,12 +145,8 @@ The following markers are recognized:
 
 =begin code :lang<raku>
 
-my role Type { has $.type }
-
 # accept haystack if "bar" is NOT found
-my &implicit = compile-needle("!bar");
-my &bypair   = compile-needle("not" => "bar");
-my &mixedin  = compile-needle("bar" but Type<not>);
+my &needle = compile-needle('!bar');
 
 =end code
 
@@ -161,14 +157,23 @@ be processed, and its result negated (see: type is "not")
 
 =begin code :lang<raku>
 
+# accept haystack if "bar" is found as a word
+my &needle = compile-needle('§bar');
+
 =end code
 
 Assumes the string given (without the C<§>) should match with
-word-boundary semantics applied (see: type is "code").
+word-boundary semantics applied (see: type is "words").
 
 =head4 starts with *
 
 =begin code :lang<raku>
+
+# accept haystack if alphabetically before "bar"
+my &is-before = compile-needle('* before "bar"');
+
+# return every haystack uppercased
+my &uppercased = compile-needle('*.uc');
 
 =end code
 
@@ -179,6 +184,9 @@ attempts to produce that specification accordingly (see: type is "code").
 
 =begin code :lang<raku>
 
+# accept haystack if it starts with "bar"
+my &needle = compile-needle('^bar');
+
 =end code
 
 Assumes the string given (without the C<^>) should match with
@@ -187,6 +195,9 @@ C<.starts-with> semantics applied (see: type is "starts-with").
 =head4 ends with $
 
 =begin code :lang<raku>
+
+# accept haystack if it ends with "bar"
+my &needle = compile-needle('bar$');
 
 =end code
 
@@ -197,6 +208,9 @@ C<.ends-with> semantics applied (see: type is "ends-with").
 
 =begin code :lang<raku>
 
+# accept haystack if it is equal to "bar"
+my &needle = compile-needle('^bar$');
+
 =end code
 
 Assumes the string given (without the C<^> and C<$>) should match exactly
@@ -205,6 +219,9 @@ Assumes the string given (without the C<^> and C<$>) should match exactly
 =head4 starts with / and ends with /
 
 =begin code :lang<raku>
+
+# accept haystack if it matches "bar" as a regular expression
+my &needle = compile-needle('/bar/');
 
 =end code
 
@@ -215,6 +232,9 @@ to produce a C<Regex> object and wraps that in a call to C<.contains>
 =head4 starts with { and ends with }
 
 =begin code :lang<raku>
+
+# return the lowercased, whitespace trimmed haystack
+my &needle = compile-needle('{.trim.lc}');
 
 =end code
 

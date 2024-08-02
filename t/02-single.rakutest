@@ -3,32 +3,20 @@ BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 use Test;
 use Needle::Compile;
 
-my @nameds = (), :ignorecase, :ignoremark, :smartcase, :smartmark;
-
-plan 2 + 5 * @nameds;
+plan 7;
 
 code ".subst('foo', 'bar')", "foo", "bar", 'simple .subst';
 code ".uc",                  "foo", "FOO", 'simple .uc';
 
-for @nameds {
-    contains "foo", "foo", "bar", "find simple 'foo'", |$_;
-}
+run-nameds &contains, "foo", "foo", "bar", "find simple 'foo'";
 
-for @nameds {
-    starts-with "foo", "foo", "bar", "starts with simple 'foo'", |$_;
-}
+run-nameds &starts-with, "foo", "foo", "bar", "starts with simple 'foo'";
 
-for @nameds {
-    ends-with "foo", "foo", "bar", "ends with simple 'foo'", |$_;
-}
+run-nameds &ends-with, "foo", "foo", "bar", "ends with simple 'foo'";
 
-for @nameds {
-    equal "foo", "foo", "bar", "equal simple 'foo'", |$_;
-}
+run-nameds &equal, "foo", "foo", "bar", "equal simple 'foo'";
 
-for @nameds {
-    words "foo", "foo", "bar", "words simple 'foo'", |$_;
-}
+run-nameds &words, "foo", "foo", "bar", "words simple 'foo'";
 
 #-------------------------------------------------------------------------------
 # Infrastructure
@@ -39,6 +27,43 @@ my role Type {
     method raku() { callsame() ~ " but Type('$!type')" }
 }
 
+# Filter out the targets that are pure strings
+my sub autonots(@targets) {
+    @targets.map: { "!$_" if .WHAT =:= Str }
+}
+
+# Run the given needle specification for all possible named arguments
+my @nameds = (), :ignorecase, :ignoremark, :smartcase, :smartmark;
+my sub run-nameds(&code, |c) is test-assertion {
+    subtest "all named arguments for &code.name()" => {
+        plan +@nameds;
+        code |c, |$_ for @nameds;
+    }
+}
+
+#- code ------------------------------------------------------------------------
+# All tests for code that aren't tested elsewhere
+my sub code($target, $source, $result, $comment) is test-assertion {
+    subtest "code: $comment" => {
+        my @targets =
+          $target but Type("code"),
+          "\{$target}",
+          code => $target,
+        ;
+        @targets.push("*$target") if $target.starts-with(".");
+
+        plan 2 * @targets;
+
+        for @targets {
+            my $needle := compile-needle($_);
+            isa-ok $needle, Callable, "Testing $_.raku()";
+
+            is-deeply $needle($source), $result, "'$source' transformed ok";
+        }
+    }
+}
+
+#- contains --------------------------------------------------------------------
 # All possible tests for contains
 my sub contains($target, $hit, $miss, $comment, *%_) is test-assertion {
     my $named := %_ ?? ", :%_.keys.head()" !! "";
@@ -61,7 +86,7 @@ my sub contains($target, $hit, $miss, $comment, *%_) is test-assertion {
           code     => $ascode,
         ;
 
-        my @autonots = @targets.map({ "!$_" if .WHAT =:= Str });
+        my @autonots = autonots @targets;
 
         plan 8 * @targets + 4 * @autonots;
 
@@ -92,6 +117,7 @@ my sub contains($target, $hit, $miss, $comment, *%_) is test-assertion {
     }
 }
 
+#- starts-with -----------------------------------------------------------------
 # All possible tests for starts-with
 my sub starts-with($target, $hit, $miss, $comment, *%_) is test-assertion {
     my $named := %_ ?? ", :%_.keys.head()" !! "";
@@ -115,7 +141,7 @@ my sub starts-with($target, $hit, $miss, $comment, *%_) is test-assertion {
           code        => $ascode,
         ;
 
-        my @autonots = @targets.map({ "!$_" if .WHAT =:= Str });
+        my @autonots = autonots @targets;
 
         plan 8 * @targets + 4 * @autonots;
 
@@ -146,6 +172,7 @@ my sub starts-with($target, $hit, $miss, $comment, *%_) is test-assertion {
     }
 }
 
+#- ends-with -------------------------------------------------------------------
 # All possible tests for ends-with
 my sub ends-with($target, $hit, $miss, $comment, *%_) is test-assertion {
     my $named := %_ ?? ", :%_.keys.head()" !! "";
@@ -169,7 +196,7 @@ my sub ends-with($target, $hit, $miss, $comment, *%_) is test-assertion {
           regex     => $auto,
         ;
 
-        my @autonots = @targets.map({ "!$_" if .WHAT =:= Str });
+        my @autonots = autonots @targets;
 
         plan 8 * @targets + 4 * @autonots;
 
@@ -200,6 +227,7 @@ my sub ends-with($target, $hit, $miss, $comment, *%_) is test-assertion {
     }
 }
 
+#- equal -----------------------------------------------------------------------
 # All possible tests for equal
 my sub equal($target, $hit, $miss, $comment, *%_) is test-assertion {
     my $named := %_ ?? ", :%_.keys.head()" !! "";
@@ -220,7 +248,7 @@ my sub equal($target, $hit, $miss, $comment, *%_) is test-assertion {
           code  => $ascode,
         ;
 
-        my @autonots = @targets.map({ "!$_" if .WHAT =:= Str });
+        my @autonots = autonots @targets;
 
         plan 8 * @targets + 4 * @autonots;
 
@@ -251,6 +279,7 @@ my sub equal($target, $hit, $miss, $comment, *%_) is test-assertion {
     }
 }
 
+#- words -----------------------------------------------------------------------
 # All possible tests for words
 my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
     my $named := %_ ?? ", :%_.keys.head()" !! "";
@@ -266,7 +295,7 @@ my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
           auto  => $auto,
         ;
 
-        my @autonots = @targets.map({ "!$_" if .WHAT =:= Str });
+        my @autonots = autonots @targets;
 
         plan 12 * @targets + 6 * @autonots;
 
@@ -299,27 +328,6 @@ my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
             is-deeply $not(":$hit:"),     False, "! hit ':$hit:'";
             is-deeply $not("oo{$hit}ff"), True,  "! miss 'oo{$hit}ff'";
             is-deeply $not($miss),        True,  "! miss '$miss'";
-        }
-    }
-}
-
-# All other tests for code
-my sub code($target, $source, $result, $comment) is test-assertion {
-    subtest "code: $comment" => {
-        my @targets =
-          $target but Type("code"),
-          "\{$target}",
-          code => $target,
-        ;
-        @targets.push("*$target") if $target.starts-with(".");
-
-        plan 2 * @targets;
-
-        for @targets {
-            my $needle := compile-needle($_);
-            isa-ok $needle, Callable, "Testing $_.raku()";
-
-            is-deeply $needle($source), $result, "'$source' transformed ok";
         }
     }
 }
