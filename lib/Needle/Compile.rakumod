@@ -30,7 +30,7 @@ my class JP {
                         my $pos := $message.words.tail.Int;
                         fail qq:to/ERROR/.chomp;
 $message:
-$pattern.substr(0,$pos)«$pattern.substr($pos,1)»$pattern.substr($pos + 1)
+{$pattern.substr(0,$pos)}«$pattern.substr($pos,1)»$pattern.substr($pos + 1)
 {" " x $pos}⏏
 ERROR
                     }
@@ -63,7 +63,7 @@ ERROR
           !! fail qq:!c:to/ERROR/.chomp;
 Must do something with the JP object *inside* the pattern, such as:
 
-'{jp("$.pattern").Slip}'
+'{ jp("$.pattern").Slip }'
 
 to avoid late stringification of the JP object.
 ERROR
@@ -111,7 +111,7 @@ my &jp = my sub jp-stub(str $pattern) {
     }
 
     # unstub ourselves, and call the original pattern on the unstubbed version
-    (&jp = my sub jp-live(str $pattern) { JP.new($pattern) })($pattern)
+    (&jp = anon sub jp(str $pattern) { JP.new($pattern) })($pattern)
 }
 
 #-------------------------------------------------------------------------------# Helper subs
@@ -271,11 +271,7 @@ my multi sub handle("auto", Str:D $_, %_) {
 # Handlers that build custom ASTs
 
 my multi sub handle("code", Str:D $spec, %_) {
-    my $ast := $spec.subst(  # make sure jp() calls have their arg stringified
-      / 'jp('<( <-[()]>* )>')' || 'jp('<( [<-[()]>* <~~> <-[()]>*]* )>')' /,
-      { "Q/$//" },
-      :global
-    ).AST;
+    my $ast := $spec.AST;
 
     # prefix: my $*_ := $_
     $ast.unshift-statement(
@@ -295,16 +291,31 @@ my multi sub handle("code", Str:D $spec, %_) {
 }
 
 my multi sub handle("json-path", Str:D $spec, %_) {
-    # jp($spec).Slip
-    RakuAST::ApplyPostfix.new(
-      operand => RakuAST::Call::Name.new(
-        name => RakuAST::Name.from-identifier("jp"),
-        args => RakuAST::ArgList.new(
-          RakuAST::StrLiteral.new($spec)
+    RakuAST::StatementList.new(
+      # my $*_ := $_;
+      RakuAST::Statement::Expression.new(
+        expression => RakuAST::VarDeclaration::Simple.new(
+          sigil       => "\$",
+          twigil      => "*",
+          desigilname => RakuAST::Name.from-identifier("_"),
+          initializer => RakuAST::Initializer::Bind.new(
+            RakuAST::Var::Lexical.new("\$_")
+          )
         )
       ),
-      postfix => RakuAST::Call::Method.new(
-        name => RakuAST::Name.from-identifier("Slip")
+      RakuAST::Statement::Expression.new(
+        # jp($spec).Slip
+        expression => RakuAST::ApplyPostfix.new(
+          operand => RakuAST::Call::Name.new(
+            name => RakuAST::Name.from-identifier("jp"),
+            args => RakuAST::ArgList.new(
+              RakuAST::StrLiteral.new($spec)
+            )
+          ),
+          postfix => RakuAST::Call::Method.new(
+            name => RakuAST::Name.from-identifier("Slip")
+          )
+        )
       )
     )
 }
@@ -421,15 +432,12 @@ my multi sub compile-needle(*@spec, *%_) {
     my @nodes = @spec.map: { handle $_, %_ }
 
     if @nodes == 1 {
-say @nodes.head;
+#say @nodes.head;
         wrap-in-block(@nodes.head).EVAL
     }
     elsif @nodes {
         NYI "multiple needles"
     }
 }
-
-#my &needle := compile-needle("json-path" => 'auth');
-#say needle %( auth => "liz" );
 
 # vim: expandtab shiftwidth=4
