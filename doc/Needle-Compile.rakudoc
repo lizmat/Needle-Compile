@@ -10,17 +10,23 @@ Needle::Compile - compile a search needle specification
 
 use Needle::Compile;
 
-my &needle = compile-needle("bar");
-say needle("foo bar baz");             # True
-say needle("Huey, Dewey, and Louie");  # False
+my &basic = compile-needle("bar");
+say basic("foo bar baz");             # True
+say basic("Huey, Dewey, and Louie");  # False
+
+my &capitals-ok = compile-needle("bar", :ignorecase);
+say capitals-ok("foo bar baz");             # True
+say capitals-ok("FOO BAR BAZ");             # True
+say capitals-ok("Huey, Dewey, and Louie");  # False
 
 =end code
 
 =head1 DESCRIPTION
 
 Needle::Compile exports a single subroutine "compile-needle" that takes
-a number of arguments that specify a search query, and returns a C<Callable>
-that can be called with a given haystack to see if there is a match.
+a number of arguments that specify a search query needle, and returns a
+C<Callable> that can be called with a given haystack to see if there is
+a match.
 
 It can as such be used as the argument to the C<rak> subroutine provided
 by the L<C<rak>|https://raku.land/zef:lizmat/rak> distribution.
@@ -32,15 +38,38 @@ needle can be specified in 3 ways:
 
 =item implicitely
 
+=begin code :lang<raku>
+
+# accept haystack if "bar" as word is found
+my &needle = compile-needle("§bar");
+
+=end code
+
 By using textual markers at the start and end of the given string needle
 (see: type is "auto").
 
 =item explicitely
 
+=begin code :lang<raku>
+
+# accept haystack if "bar" as word is found
+my &needle = compile-needle("words" => "bar");
+
+=end code
+
 By specifying a needle as a C<Pair>, with the key being a string describing
 the type.
 
 =item mixed in
+
+=begin code :lang<raku>
+
+my role Type { has $.type }
+
+# accept haystack if "bar" as word is found
+my &needle = compile-needle("bar" but Type("words"));
+
+=end code
 
 If the needle specified supports a C<.type> method, then that method will
 be called to determine the type.
@@ -52,12 +81,54 @@ These can be specified explicitely (with the C<:ignorecase> and
 C<:ignoremark> named arguments), or implicitely with the C<:smartcase>
 and C<:smartmark> named arguments.
 
+=item ignorecase
+
+=begin code :lang<raku>
+
+# accept haystack if "bar" is found, regardless of case
+my &needle = compile-needle("bar", :ignorecase);
+
+=end code
+
+Allow characters to match even if they are of mixed case.
+
 =item smartcase
+
+=begin code :lang<raku>
+
+# accept haystack if "bar" is found, regardless of case
+my &anycase = compile-needle("bar", :smartcase);
+
+# accept haystack if "Bar" is found
+my &exactcase = compile-needle("Bar", :smartcase);
+
+=end code
 
 If the needle is a string and does B<not> contain any uppercase characters,
 then C<ignorecase> semantics will be assumed.
 
+=item ignoremark
+
+=begin code :lang<raku>
+
+# accept haystack if "bar" is found, regardless of any accents
+my &anycase = compile-needle("bar", :ignoremark);
+
+=end code
+
+Allow characters to match even if they have accents (or not).
+
 =item smartmark
+
+=begin code :lang<raku>
+
+# accept haystack if "bar" is found, regardless of any accents
+my &anymark = compile-needle("bar", :smartmark);
+
+# accept haystack if "bår" is found
+my &exactmark = compile-needle("bår", :smartcase);
+
+=end code
 
 If the needle is a string and does B<not> contain any characters with accents,
 then C<ignoremark> semantics will be assumed.
@@ -72,35 +143,70 @@ The following markers are recognized:
 
 =item starts with !
 
+=begin code :lang<raku>
+
+my role Type { has $.type }
+
+# accept haystack if "bar" is NOT found
+my &implicit = compile-needle("!bar");
+my &bypair   = compile-needle("not" => "bar");
+my &mixedin  = compile-needle("bar" but Type<not>);
+
+=end code
+
 This is a meta-marker.  Assumes the string given (without the C<!>) should
 be processed, and its result negated (see: type is "not")
 
 =item starts with §
+
+=begin code :lang<raku>
+
+=end code
 
 Assumes the string given (without the C<§>) should match with
 word-boundary semantics applied (see: type is "code").
 
 =item starts with *
 
+=begin code :lang<raku>
+
+=end code
+
 Assumes the given string is a valid C<WhateverCode> specification and
 attempts to produce that specification accordingly (see: type is "code").
 
 =item starts with ^
+
+=begin code :lang<raku>
+
+=end code
 
 Assumes the string given (without the C<^>) should match with
 C<.starts-with> semantics applied (see: type is "starts-with").
 
 =item ends with $
 
+=begin code :lang<raku>
+
+=end code
+
 Assumes the string given (without the C<$>) should match with
 C<.ends-with> semantics applied (see: type is "ends-with").
 
 =item starts with ^ and ends with $
 
+=begin code :lang<raku>
+
+=end code
+
 Assumes the string given (without the C<^> and C<$>) should match exactly
 (see: type is "equal").
 
 =item starts with / and ends with /
+
+=begin code :lang<raku>
+
+=end code
 
 Assumes the string given (without the C</>'s) is a regex and attempts
 to produce a C<Regex> object and wraps that in a call to C<.contains>
@@ -108,50 +214,117 @@ to produce a C<Regex> object and wraps that in a call to C<.contains>
 
 =item starts with { and ends with }
 
+=begin code :lang<raku>
+
+=end code
+
 Assumes the string given (without the C<{> and C<}>) is an expression
 and attempts to produce the code (see: type is "code").
 
 =item none of the above
+
+=begin code :lang<raku>
+
+# accept haystack if it contains "bar"
+my &needle = compile-needle("bar");
+
+=end code
 
 Assumes the string given should match with C<.contains> semantics
 applied (see: type is "contains").
 
 =head3 code
 
+=begin code :lang<raku>
+
+# return uppercase version of the haystack
+my &needle = compile-needle("code" => ".uc");
+
+=end code
+
 Assumes the string is an expression and attempts to produce that code,
 with the haystack being presented as the topic (C<$_>).
 
 =head3 contains
 
+=begin code :lang<raku>
+
+# accept haystack if it contains "bar"
+my &needle = compile-needle("contains" => "bar");
+
+=end code
+
 Assumes the string is a needle in a call to C<.contains>.
 
 =head3 ends-with
 
+=begin code :lang<raku>
+
+# accept haystack if it ends with "bar"
+my &needle = compile-needle("ends-with" => "bar");
+
+=end code
+
 Assumes the string is a needle in a call to C<.ends-with>.
 
 =head3 equal
+
+=begin code :lang<raku>
+
+# accept haystack if it is equal to "bar"
+my &needle = compile-needle("equal" => "bar");
+
+=end code
 
 Assumes the string is a needle to compare with the haystack using infix
 C<eq> semantics.
 
 =head3 not
 
+=begin code :lang<raku>
+
+# accept haystack if "bar" is NOT found
+my &needle = compile-needle("not" => "bar");
+
+=end code
+
 This is a meta-type: it inverts the result of the result of matching
 of the given needle (which can be anything otherwise acceptable).
 
 =head3 regex
+
+=begin code :lang<raku>
+
+# accept haystack if "bar" is found
+my &needle = compile-needle("regex" => "bar");
+
+=end code
 
 Assumes the string is a regex specification to be used as a needle in a
 call to C<.contains>.
 
 =head3 starts-with
 
+=begin code :lang<raku>
+
+# accept haystack if it starts with "bar"
+my &needle = compile-needle("starts-with" => "bar");
+
+=end code
+
 Assumes the string is a needle in a call to C<.starts-with>.
 
 =head3 words
 
+=begin code :lang<raku>
+
+# accept haystack if "bar" is found as a word
+my &needle = compile-needle("words" => "bar");
+
+=end code
+
 Assumes the string is a needle that will match if the needle is found
-with word-boundaries on eiher side of the needle.
+with word boundaries on eiher side of the needle.
 
 =head1 AUTHOR
 
