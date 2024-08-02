@@ -3,17 +3,32 @@ BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 use Test;
 use Needle::Compile;
 
-plan 5;
+my @nameds = (), :ignorecase, :ignoremark, :smartcase, :smartmark;
 
-contains "foo", "foo", "bar", "find simple 'foo'";
+plan 2 + 5 * @nameds;
 
-starts-with "foo", "foo", "bar", "starts with simple 'foo'";
+code ".subst('foo', 'bar')", "foo", "bar", 'simple .subst';
+code ".uc",                  "foo", "FOO", 'simple .uc';
 
-ends-with "foo", "foo", "bar", "ends with simple 'foo'";
+for @nameds {
+    contains "foo", "foo", "bar", "find simple 'foo'", |$_;
+}
 
-equal "foo", "foo", "bar", "equal simple 'foo'";
+for @nameds {
+    starts-with "foo", "foo", "bar", "starts with simple 'foo'", |$_;
+}
 
-words "foo", "foo", "bar", "words simple 'foo'";
+for @nameds {
+    ends-with "foo", "foo", "bar", "ends with simple 'foo'", |$_;
+}
+
+for @nameds {
+    equal "foo", "foo", "bar", "equal simple 'foo'", |$_;
+}
+
+for @nameds {
+    words "foo", "foo", "bar", "words simple 'foo'", |$_;
+}
 
 #-------------------------------------------------------------------------------
 # Infrastructure
@@ -25,8 +40,10 @@ my role Type {
 }
 
 # All possible tests for contains
-my sub contains($target, $hit, $miss, $comment) is test-assertion {
-    subtest "contains: $comment" => {
+my sub contains($target, $hit, $miss, $comment, *%_) is test-assertion {
+    my $named := %_ ?? ", :%_.keys.head()" !! "";
+
+    subtest "contains: $comment$named$named" => {
         my $ascode := ".contains('$target')";
 
         my @targets =
@@ -49,7 +66,7 @@ my sub contains($target, $hit, $miss, $comment) is test-assertion {
         plan 8 * @targets + 4 * @autonots;
 
         for @targets {
-            my $needle := compile-needle($_);
+            my $needle := compile-needle($_, |%_);
             isa-ok $needle, Callable, "Testing $_.raku()";
 
             is-deeply $needle($hit),          True,  "hit '$hit'";
@@ -65,7 +82,7 @@ my sub contains($target, $hit, $miss, $comment) is test-assertion {
         }
 
         for @autonots {
-            my $not := compile-needle($_);
+            my $not := compile-needle($_, |%_);
             isa-ok $not, Callable, "Testing '$_'";
 
             is-deeply $not($hit),          False, "! hit '$hit'";
@@ -76,8 +93,10 @@ my sub contains($target, $hit, $miss, $comment) is test-assertion {
 }
 
 # All possible tests for starts-with
-my sub starts-with($target, $hit, $miss, $comment) is test-assertion {
-    subtest "starts-with: $comment" => {
+my sub starts-with($target, $hit, $miss, $comment, *%_) is test-assertion {
+    my $named := %_ ?? ", :%_.keys.head()" !! "";
+
+    subtest "starts-with: $comment$named" => {
         my $auto   := "^$target";
         my $ascode := ".starts-with('$target')";
 
@@ -101,7 +120,7 @@ my sub starts-with($target, $hit, $miss, $comment) is test-assertion {
         plan 8 * @targets + 4 * @autonots;
 
         for @targets {
-            my $needle := compile-needle($_);
+            my $needle := compile-needle($_, |%_);
             isa-ok $needle, Callable, "Testing $_.raku()";
 
             is-deeply $needle($hit),    True,  "hit '$hit'";
@@ -117,7 +136,7 @@ my sub starts-with($target, $hit, $miss, $comment) is test-assertion {
         }
 
         for @autonots {
-            my $not := compile-needle($_);
+            my $not := compile-needle($_, |%_);
             isa-ok $not, Callable, "Testing !$_";
 
             is-deeply $not($hit),    False, "! hit '$hit'";
@@ -128,8 +147,10 @@ my sub starts-with($target, $hit, $miss, $comment) is test-assertion {
 }
 
 # All possible tests for ends-with
-my sub ends-with($target, $hit, $miss, $comment) is test-assertion {
-    subtest "ends-with: $comment" => {
+my sub ends-with($target, $hit, $miss, $comment, *%_) is test-assertion {
+    my $named := %_ ?? ", :%_.keys.head()" !! "";
+
+    subtest "ends-with: $comment$named" => {
         my $auto   := $target ~ '$';
         my $ascode := ".ends-with('$target')";
 
@@ -153,7 +174,7 @@ my sub ends-with($target, $hit, $miss, $comment) is test-assertion {
         plan 8 * @targets + 4 * @autonots;
 
         for @targets {
-            my $needle := compile-needle($_);
+            my $needle := compile-needle($_, |%_);
             isa-ok $needle, Callable, "Testing $_.raku()";
 
             is-deeply $needle($hit),    True,  "hit '$hit'";
@@ -169,7 +190,7 @@ my sub ends-with($target, $hit, $miss, $comment) is test-assertion {
         }
 
         for @autonots {
-            my $not := compile-needle($_);
+            my $not := compile-needle($_, |%_);
             isa-ok $not, Callable, "Testing !$_";
 
             is-deeply $not($hit),    False, "! hit '$hit'";
@@ -180,8 +201,10 @@ my sub ends-with($target, $hit, $miss, $comment) is test-assertion {
 }
 
 # All possible tests for equal
-my sub equal($target, $hit, $miss, $comment) is test-assertion {
-    subtest "equal: $comment" => {
+my sub equal($target, $hit, $miss, $comment, *%_) is test-assertion {
+    my $named := %_ ?? ", :%_.keys.head()" !! "";
+
+    subtest "equal: $comment$named" => {
         my $auto   := "^$target\$";
         my $ascode := "'$target' eq \$_";
 
@@ -202,7 +225,7 @@ my sub equal($target, $hit, $miss, $comment) is test-assertion {
         plan 8 * @targets + 4 * @autonots;
 
         for @targets {
-            my $needle := compile-needle($_);
+            my $needle := compile-needle($_, |%_);
             isa-ok $needle, Callable, "Testing $_.raku()";
 
             is-deeply $needle($hit),     True,  "hit '$hit'";
@@ -218,7 +241,7 @@ my sub equal($target, $hit, $miss, $comment) is test-assertion {
         }
 
         for @autonots {
-            my $not := compile-needle($_);
+            my $not := compile-needle($_, |%_);
             isa-ok $not, Callable, "Testing !$_";
 
             is-deeply $not($hit),     False, "! hit '$hit'";
@@ -229,8 +252,10 @@ my sub equal($target, $hit, $miss, $comment) is test-assertion {
 }
 
 # All possible tests for words
-my sub words($target, $hit, $miss, $comment) is test-assertion {
-    subtest "words: $comment" => {
+my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
+    my $named := %_ ?? ", :%_.keys.head()" !! "";
+
+    subtest "words: $comment$named" => {
         my $auto := "§$target";
 
         my @targets =
@@ -246,7 +271,7 @@ my sub words($target, $hit, $miss, $comment) is test-assertion {
         plan 12 * @targets + 6 * @autonots;
 
         for @targets {
-            my $needle := compile-needle($_);
+            my $needle := compile-needle($_, |%_);
             isa-ok $needle, Callable, "Testing $_.raku()";
 
             is-deeply $needle($hit),         True,  "hit '$hit'";
@@ -255,7 +280,7 @@ my sub words($target, $hit, $miss, $comment) is test-assertion {
             is-deeply $needle("oo{$hit}ff"), False, "miss 'oo{$hit}ff'";
             is-deeply $needle($miss),        False, "miss '$miss'";
 
-            my $not := compile-needle( (not => $_,) );
+            my $not := compile-needle( (not => $_,), |%_ );
             isa-ok $not, Callable, "Testing not $_.raku()";
 
             is-deeply $not($hit),         False, "not hit '$hit'";
@@ -266,7 +291,7 @@ my sub words($target, $hit, $miss, $comment) is test-assertion {
         }
 
         for @autonots {
-            my $not := compile-needle($_);
+            my $not := compile-needle($_, |%_);
             isa-ok $not, Callable, "Testing !$_";
 
             is-deeply $not($hit),         False, "! hit '$hit'";
@@ -274,6 +299,27 @@ my sub words($target, $hit, $miss, $comment) is test-assertion {
             is-deeply $not(":$hit:"),     False, "! hit ':$hit:'";
             is-deeply $not("oo{$hit}ff"), True,  "! miss 'oo{$hit}ff'";
             is-deeply $not($miss),        True,  "! miss '$miss'";
+        }
+    }
+}
+
+# All other tests for code
+my sub code($target, $source, $result, $comment) is test-assertion {
+    subtest "code: $comment" => {
+        my @targets =
+          $target but Type("code"),
+          "\{$target}",
+          code => $target,
+        ;
+        @targets.push("*$target") if $target.starts-with(".");
+
+        plan 2 * @targets;
+
+        for @targets {
+            my $needle := compile-needle($_);
+            isa-ok $needle, Callable, "Testing $_.raku()";
+
+            is-deeply $needle($source), $result, "'$source' transformed ok";
         }
     }
 }
