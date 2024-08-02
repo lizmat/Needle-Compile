@@ -7,6 +7,113 @@ use String::Utils:ver<0.0.24+>:auth<zef:lizmat> <
   has-marks is-lowercase non-word nomark
 >;
 
+#-------------------------------------------------------------------------------
+# Useful constants
+
+#-------------------------------------------------------------------------------
+# JSON::Path support
+
+my $json-path;
+
+# Wrapper for JSON::Path object
+my class JP {
+    has $.jp;
+    has $.pattern;
+
+    my $cache := Map.new;
+    method new($pattern) {
+        $cache{$pattern} // do {
+            CATCH {
+                if X::AdHoc.ACCEPTS($_) {
+                    my $message := .payload;
+                    if $message.starts-with('JSON path parse error') {
+                        my $pos := $message.words.tail.Int;
+                        fail qq:to/ERROR/.chomp;
+$message:
+$pattern.substr(0,$pos)«$pattern.substr($pos,1)»$pattern.substr($pos + 1)
+{" " x $pos}⏏
+ERROR
+                    }
+                }
+                fail .Str;
+            }
+            my $jp := $json-path.new($pattern);
+            my $JP := self.bless(:$jp, :$pattern);
+
+            # update cache in a threadsafe manner
+            $cache := Map.new: $cache, Pair.new: $pattern, $JP;
+            $JP
+        }
+    }
+
+    method value()  { $!jp.value($*_) }
+    method values() { $!jp.values($*_) }
+    method paths()  { $!jp.paths($*_) }
+    method paths-and-values() { $!jp.paths-and-values($*_) }
+
+    method Seq()  { $!jp.values($*_)      }
+    method Bool() { $!jp.values($*_).Bool }
+    method list() { $!jp.values($*_).List }
+    method List() { $!jp.values($*_).List }
+    method Slip() { $!jp.values($*_).Slip }
+    method gist() { $!jp.values($*_).gist }
+    method Str()  {
+        $*_
+          ?? $!jp.values($*_).Str
+          !! fail qq:!c:to/ERROR/.chomp;
+Must do something with the JP object *inside* the pattern, such as:
+
+'{jp("$.pattern").Slip}'
+
+to avoid late stringification of the JP object.
+ERROR
+    }
+
+    method words()  { $!jp.values($*_).Str.words.Slip }
+    method head(|c) { $!jp.values($*_).head(|c).Slip  }
+    method tail(|c) { $!jp.values($*_).tail(|c).Slip  }
+    method skip(|c) { $!jp.values($*_).skip(|c).Slip  }
+}
+
+# Allow postcircumfixes on jp($path)
+my multi sub postcircumfix:<[ ]>(JP:D $self) {
+    $self.values
+}
+my multi sub postcircumfix:<[ ]>(JP:D $self, Whatever) {
+    $self.values
+}
+my multi sub postcircumfix:<[ ]>(JP:D $self, Int:D $pos) {
+    $self.values[$pos].Slip
+}
+my multi sub postcircumfix:<[ ]>(JP:D $self, @pos) {
+    $self.values[@pos].Slip
+}
+my multi sub postcircumfix:<[ ]>(JP:D $self, &pos) {
+    $self.values[&pos].Slip
+}
+my multi sub postcircumfix:<[ ]>(Str:D $string, \pos) {
+    $string.words[pos].Slip
+}
+
+# Allow for slip jp($path)
+my multi sub slip(JP:D $self) {
+    $self.values.Slip
+}
+
+# Magic self-installing JSON::Path support
+my $lock := Lock.new;
+my &jp = my sub jp-stub(str $pattern) {
+    $lock.protect: {  # threadsafe loading of module
+        if $json-path<> =:= Any {
+            CATCH { fail "JSON::Path not installed" }
+            $json-path := 'use JSON::Path:ver<1.7>; JSON::Path'.EVAL;
+        }
+    }
+
+    # unstub ourselves, and call the original pattern on the unstubbed version
+    (&jp = my sub jp-live(str $pattern) { JP.new($pattern) })($pattern)
+}
+
 #-------------------------------------------------------------------------------# Helper subs
 
 my proto sub make-method(|) {*}
@@ -152,14 +259,23 @@ my multi sub handle("auto", Str:D $_, %_) {
     elsif .ends-with('$') {
         handle "ends-with", .chop, %_
     }
+    elsif .starts-with('jp:') {
+        handle "json-path", .substr(3), %_
+    }
     else {
         handle "contains", $_, %_
     }
 }
 
+#-------------------------------------------------------------------------------
 # Handlers that build custom ASTs
+
 my multi sub handle("code", Str:D $spec, %_) {
-    my $ast        := $spec.AST;
+    my $ast := $spec.subst(  # make sure jp() calls have their arg stringified
+      / 'jp('<( <-[()]>* )>')' || 'jp('<( [<-[()]>* <~~> <-[()]>*]* )>')' /,
+      { "Q/$//" },
+      :global
+    ).AST;
 
     # prefix: my $*_ := $_
     $ast.unshift-statement(
@@ -177,6 +293,22 @@ my multi sub handle("code", Str:D $spec, %_) {
 
     $ast
 }
+
+my multi sub handle("json-path", Str:D $spec, %_) {
+    # jp($spec).Slip
+    RakuAST::ApplyPostfix.new(
+      operand => RakuAST::Call::Name.new(
+        name => RakuAST::Name.from-identifier("jp"),
+        args => RakuAST::ArgList.new(
+          RakuAST::StrLiteral.new($spec)
+        )
+      ),
+      postfix => RakuAST::Call::Method.new(
+        name => RakuAST::Name.from-identifier("Slip")
+      )
+    )
+}
+
 my multi sub handle("equal", Str:D $spec, %_) {
     my $left  := $spec;
     my $right := RakuAST::Var::Lexical.new('$_');
@@ -204,6 +336,7 @@ my multi sub handle("equal", Str:D $spec, %_) {
       right => $right
     )
 }
+
 my multi sub handle("regex", Str:D $spec is copy, %_) {
     if non-word($spec) {
         my str $i = ignorecase($spec, %_) ?? ' :i' !! '';
@@ -216,7 +349,9 @@ my multi sub handle("regex", Str:D $spec is copy, %_) {
     }
 }
 
+#-------------------------------------------------------------------------------
 # Handlers that do a method call on the topic
+
 my multi sub handle("contains", Str:D $spec, %_) {
     make-method "contains", $spec, %_
 }
@@ -238,6 +373,7 @@ my multi sub handle("words", Str:D $spec, %_) {
          )
 }
 
+#-------------------------------------------------------------------------------
 # Handlers that modify other handlers
 my multi sub handle("not", Any:D $spec, %_) {
     my $ast := handle $spec, %_;
@@ -285,12 +421,15 @@ my multi sub compile-needle(*@spec, *%_) {
     my @nodes = @spec.map: { handle $_, %_ }
 
     if @nodes == 1 {
-#say @nodes.head;
+say @nodes.head;
         wrap-in-block(@nodes.head).EVAL
     }
     elsif @nodes {
         NYI "multiple needles"
     }
 }
+
+#my &needle := compile-needle("json-path" => 'auth');
+#say needle %( auth => "liz" );
 
 # vim: expandtab shiftwidth=4
