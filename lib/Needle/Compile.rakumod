@@ -15,8 +15,7 @@ my proto sub make-method(|) {*}
 my multi sub make-method(
   Str:D $name,
   Str:D $needle,
-        %_,
-        $class = RakuAST::Call::Method
+        %_
 ) {
     make-method
       $name,
@@ -24,26 +23,23 @@ my multi sub make-method(
       %(
         ignorecase => ignorecase($needle, %_),
         ignoremark => ignoremark($needle, %_)
-      ),
-      $class
+      )
 }
 
 # Make a method call with the given name and argument AST
 my multi sub make-method(
             Str:D $name,
   RakuAST::Node:D $needle,
-                  %_,
-                  $class = RakuAST::Call::Method
+                  %_
 ) {
     my $args := RakuAST::ArgList.new($needle);
-    if %_ {
-        for <ignorecase ignoremark> {
-            $args.push(RakuAST::ColonPair::True.new($_)) if %_{$_};
-        }
+
+    for <ignorecase ignoremark> {
+        $args.push(RakuAST::ColonPair::True.new($_)) if %_{$_};
     }
 
     RakuAST::Term::TopicCall.new(
-      $class.new(
+      RakuAST::Call::Method.new(
         name => RakuAST::Name.from-identifier($name),
         args => $args
       )
