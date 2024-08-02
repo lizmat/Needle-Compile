@@ -33,7 +33,7 @@ SEARCH QUERY SPECIFICATION
 
 A query can consist of multiple needles of different types. A type of needle can be specified in 3 ways:
 
-#### implicitely
+### implicitely
 
 ```raku
 # accept haystack if "bar" as word is found
@@ -42,7 +42,7 @@ my &needle = compile-needle("§bar");
 
 By using textual markers at the start and end of the given string needle (see: type is "auto").
 
-#### explicitely
+### explicitely
 
 ```raku
 # accept haystack if "bar" as word is found
@@ -51,7 +51,7 @@ my &needle = compile-needle("words" => "bar");
 
 By specifying a needle as a `Pair`, with the key being a string describing the type.
 
-#### mixed in
+### mixed in
 
 ```raku
 my role Type { has $.type }
@@ -67,7 +67,7 @@ Modifiers
 
 Many types of matches support `ignorecase` and `ignoremark` semantics. These can be specified explicitely (with the `:ignorecase` and `:ignoremark` named arguments), or implicitely with the `:smartcase` and `:smartmark` named arguments.
 
-#### ignorecase
+### ignorecase
 
 ```raku
 # accept haystack if "bar" is found, regardless of case
@@ -76,7 +76,7 @@ my &needle = compile-needle("bar", :ignorecase);
 
 Allow characters to match even if they are of mixed case.
 
-#### smartcase
+### smartcase
 
 ```raku
 # accept haystack if "bar" is found, regardless of case
@@ -88,7 +88,7 @@ my &exactcase = compile-needle("Bar", :smartcase);
 
 If the needle is a string and does **not** contain any uppercase characters, then `ignorecase` semantics will be assumed.
 
-#### ignoremark
+### ignoremark
 
 ```raku
 # accept haystack if "bar" is found, regardless of any accents
@@ -97,7 +97,7 @@ my &anycase = compile-needle("bar", :ignoremark);
 
 Allow characters to match even if they have accents (or not).
 
-#### smartmark
+### smartmark
 
 ```raku
 # accept haystack if "bar" is found, regardless of any accents

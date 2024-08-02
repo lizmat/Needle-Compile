@@ -36,7 +36,7 @@ by the L<C<rak>|https://raku.land/zef:lizmat/rak> distribution.
 A query can consist of multiple needles of different types.  A type of
 needle can be specified in 3 ways:
 
-=head4 implicitely
+=head3 implicitely
 
 =begin code :lang<raku>
 
@@ -48,7 +48,7 @@ my &needle = compile-needle("§bar");
 By using textual markers at the start and end of the given string needle
 (see: type is "auto").
 
-=head4 explicitely
+=head3 explicitely
 
 =begin code :lang<raku>
 
@@ -60,7 +60,7 @@ my &needle = compile-needle("words" => "bar");
 By specifying a needle as a C<Pair>, with the key being a string describing
 the type.
 
-=head4 mixed in
+=head3 mixed in
 
 =begin code :lang<raku>
 
@@ -81,7 +81,7 @@ These can be specified explicitely (with the C<:ignorecase> and
 C<:ignoremark> named arguments), or implicitely with the C<:smartcase>
 and C<:smartmark> named arguments.
 
-=head4 ignorecase
+=head3 ignorecase
 
 =begin code :lang<raku>
 
@@ -92,7 +92,7 @@ my &needle = compile-needle("bar", :ignorecase);
 
 Allow characters to match even if they are of mixed case.
 
-=head4 smartcase
+=head3 smartcase
 
 =begin code :lang<raku>
 
@@ -107,7 +107,7 @@ my &exactcase = compile-needle("Bar", :smartcase);
 If the needle is a string and does B<not> contain any uppercase characters,
 then C<ignorecase> semantics will be assumed.
 
-=head4 ignoremark
+=head3 ignoremark
 
 =begin code :lang<raku>
 
@@ -118,7 +118,7 @@ my &anycase = compile-needle("bar", :ignoremark);
 
 Allow characters to match even if they have accents (or not).
 
-=head4 smartmark
+=head3 smartmark
 
 =begin code :lang<raku>
 
