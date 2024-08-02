@@ -33,7 +33,7 @@ my sub autonots(@targets) {
 }
 
 # Run the given needle specification for all possible named arguments
-my @nameds = (), :ignorecase, :ignoremark, :smartcase, :smartmark;
+INIT my @nameds = (), :ignorecase, :ignoremark, :smartcase, :smartmark;
 my sub run-nameds(&code, |c) is test-assertion {
     subtest "all named arguments for &code.name()" => {
         plan +@nameds;
