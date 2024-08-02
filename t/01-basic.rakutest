@@ -1,8 +1,8 @@
 use Test;
 use Needle::Compile;
 
-pass "replace me";
+plan 1;
 
-done-testing;
+ok MY::<&compile-needle>, 'did compile-needle get exported';
 
 # vim: expandtab shiftwidth=4

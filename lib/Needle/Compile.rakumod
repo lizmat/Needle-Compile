@@ -139,7 +139,7 @@ my multi sub handle("auto", Str:D $_, %_) {
         handle "code", .substr(1, *-1), %_
     }
     elsif .starts-with('/') && .ends-with('/') {
-        handle "code", .substr(1, *-1), %_
+        handle "regex", .substr(1, *-1), %_
     }
     elsif .starts-with('^') {
         if .ends-with('$') {
@@ -167,7 +167,7 @@ my multi sub handle("code", Str:D $spec, %_) {
 }
 my multi sub handle("equal", Str:D $spec, %_) {
     my $left  := $spec;
-    my $right := RakuAST::Var::Lexical.new("\$_");
+    my $right := RakuAST::Var::Lexical.new('$_');
 
     if ignorecase($spec, %_) {
         $left  := $spec.fc;
@@ -220,7 +220,7 @@ my multi sub handle("words", Str:D $spec, %_) {
       !! RakuAST::Call::Name.new(
            name => RakuAST::Name.from-identifier("has-word"),
            args => RakuAST::ArgList.new(
-             RakuAST::Var::Lexical.new("\$_"),
+             RakuAST::Var::Lexical.new('$_'),
              RakuAST::StrLiteral.new($spec),
            )
          )
