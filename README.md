@@ -209,6 +209,8 @@ my &needle = compile-needle("code" => ".uc");
 
 Assumes the string is an expression and attempts to produce that code, with the haystack being presented as the topic (`$_`).
 
+To facilitate the use of libraries that wish to access that topic, it is also available as the `$*_` dynamic variable.
+
 ### contains
 
 ```raku

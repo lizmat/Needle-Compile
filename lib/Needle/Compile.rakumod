@@ -160,10 +160,22 @@ my multi sub handle("auto", Str:D $_, %_) {
 # Handlers that build custom ASTs
 my multi sub handle("code", Str:D $spec, %_) {
     my $ast        := $spec.AST;
-    my @statements := $ast.statements;
-    @statements == 1
-      ?? @statements.head.expression
-      !! $ast
+
+    # prefix: my $*_ := $_
+    $ast.unshift-statement(
+      RakuAST::Statement::Expression.new(
+        expression => RakuAST::VarDeclaration::Simple.new(
+          sigil       => "\$",
+          twigil      => "*",
+          desigilname => RakuAST::Name.from-identifier("_"),
+          initializer => RakuAST::Initializer::Bind.new(
+            RakuAST::Var::Lexical.new("\$_")
+          )
+        )
+      )
+    );
+
+    $ast
 }
 my multi sub handle("equal", Str:D $spec, %_) {
     my $left  := $spec;
@@ -230,7 +242,9 @@ my multi sub handle("words", Str:D $spec, %_) {
 my multi sub handle("not", Any:D $spec, %_) {
     my $ast := handle $spec, %_;
     if $ast ~~ RakuAST::StatementList {
-        NYI "wrapping on multiple statements in not";
+        my $last := $ast.statements.tail;
+        $last.set-expression(prefix-not $last.expression);
+        $ast
     }
     else {
         prefix-not $ast

@@ -3,10 +3,11 @@ BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 use Test;
 use Needle::Compile;
 
-plan 7;
+plan 8;
 
-code ".subst('foo', 'bar')", "foo", "bar", 'simple .subst';
-code ".uc",                  "foo", "FOO", 'simple .uc';
+code '.subst("foo", "bar")', "foo", "bar", 'simple .subst';
+code '.uc',                  "foo", "FOO", 'simple .uc';
+code '$*_ eq $_',            "foo", True,  'check availability of $*_';
 
 run-nameds &contains, "foo", "foo", "bar", "find simple 'foo'";
 
