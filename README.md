@@ -3,7 +3,7 @@
 NAME
 ====
 
-Needle::Compile - Compile a search needle specification
+Needle::Compile - compile a search needle specification
 
 SYNOPSIS
 ========
