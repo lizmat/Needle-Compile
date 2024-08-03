@@ -17,6 +17,7 @@ my @auth =
   "auth" but Type<json-path>,
   "json-path" => "auth",
   '{ |jp("auth") }',
+  "code" => 'jp("auth").Slip',
 ;
 
 plan +@auth;

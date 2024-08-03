@@ -46,6 +46,16 @@ ERROR
         }
     }
 
+    method !late-stringification() {
+        fail qq:!c:to/ERROR/.chomp;
+Must do something with the JP object *inside* the pattern, such as:
+
+'{ jp("$.pattern").Slip }'
+
+to avoid late stringification of the JP object.
+ERROR
+    }
+
     method value()  { $!jp.value($*_) }
     method values() { $!jp.values($*_) }
     method paths()  { $!jp.paths($*_) }
@@ -56,17 +66,15 @@ ERROR
     method list() { $!jp.values($*_).List }
     method List() { $!jp.values($*_).List }
     method Slip() { $!jp.values($*_).Slip }
-    method gist() { $!jp.values($*_).gist }
+    method gist() {
+        $*_
+          ?? $!jp.values($*_).gist
+          !! self!late-stringification
+    }
     method Str()  {
         $*_
           ?? $!jp.values($*_).Str
-          !! fail qq:!c:to/ERROR/.chomp;
-Must do something with the JP object *inside* the pattern, such as:
-
-'{ jp("$.pattern").Slip }'
-
-to avoid late stringification of the JP object.
-ERROR
+          !! self!late-stringification
     }
 
     method words()  { $!jp.values($*_).Str.words.Slip }

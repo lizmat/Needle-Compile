@@ -180,6 +180,19 @@ my &uppercased = compile-needle('*.uc');
 Assumes the given string is a valid C<WhateverCode> specification and
 attempts to produce that specification accordingly (see: type is "code").
 
+=head4 starts with jp:
+
+=begin code :lang<raku>
+
+# return result of JSON::Path query "auth"
+my &needle = compile-needle('jp:auth');
+
+=end code
+
+Assumes the given string (without the C<jp:> prefix) is a valid
+L<C<JSON Path>|https://en.wikipedia.org/wiki/JSONPath> specification
+(see: type is "json-path").
+
 =head4 starts with ^
 
 =begin code :lang<raku>
@@ -302,6 +315,38 @@ my &needle = compile-needle("equal" => "bar");
 Assumes the string is a needle to compare with the haystack using infix
 C<eq> semantics.
 
+=head3 json-path
+
+=begin code :lang<raku>
+
+# return result of JSON::Path query "auth"
+my &needle = compile-needle("json-path" => 'auth');
+
+=end code
+
+Assumes the given string is a valid
+L<C<JSON Path>|https://en.wikipedia.org/wiki/JSONPath> specification.
+
+Must have the L<C<JSON::Path>|https://raku.land/cpan:JNTHN/JSON::Path>
+module installed.
+
+The generated C<Callable> will expect an C<Associative> haystack (aka, a
+<Hash>) to be passed, and will return a C<Slip> with any results.
+
+=begin code :lang<raku>
+
+# return result of JSON::Path query "auth"
+my &needle = compile-needle({ jp('auth').Slip });
+
+=end code
+
+Alternately, you can also the C<jp()> function.  This returns a specialized
+C<JP> object.  Note that simply specifying a call to the C<jp> function is
+not enough: one must do something with it.  In the above example calling
+C<.Slip> will cause the actual querying to happen.
+
+See "Doing JSON path queries in code needles" for more information.
+
 =head3 not
 
 =begin code :lang<raku>
@@ -347,7 +392,60 @@ my &needle = compile-needle("words" => "bar");
 =end code
 
 Assumes the string is a needle that will match if the needle is found
-with word boundaries on eiher side of the needle.
+with word boundaries on either side of the needle.
+
+=head2 Doing JSON path queries in code needles
+
+=begin code :lang<raku>
+
+# return result of JSON::Path query "auth"
+my &needle = compile-needle({ jp('auth').Slip });
+
+=end code
+
+The initial call to the C<jp> function will attempt to load the
+C<JSON::Path> module, and fail if it cannot.  If the load is successful,
+it will create an object of the (internal) C<JP> class with the giveni
+pattern.
+
+If the C<JSON::Path> module was already loaded, it will either produce
+the C<JP> object from a cache, or create a new C<JP> object.
+
+The object as such, does nothing.  It needs to have a method called on
+it B<within the scope of the code needle> to properly function.
+
+If you're using the (implicit) C<"json-path"> type for your needle, this
+is done automatically for you, by calling the C<.Slip> method on it.
+
+The following methods can be called on the C<JP> object:
+
+=table
+  method             selected
+  ---------------------------
+  .value             The first selected value
+  .values            All selected values as a Seq
+  .paths             The paths of all selected values as a Seq
+  .paths-and-values  Interleaved selected paths and values
+  .words             All words in selected values as a Slip
+  .head              The first N selected values as a Slip
+  .tail              The last N selected values as a Slip
+  .skip              Skip N selected values, produce rest as a Slip
+  .Seq               All selected values as a Seq
+  .Bool              True if any values selected, else False
+  .List              All selected values as a List
+  .Slip              All selected values as a Slip
+  .gist              All selected values stringified as a gist
+  .Str               All selected values stringified
+
+=begin code :lang<raku>
+
+# return first and third result of JSON::Path query "auth" as a Slip
+my &needle = compile-needle({ jp('auth')[0,2] });
+
+=end code
+
+Furthermore, you can use postcircumfix C<[ ]> on the C<JP> object to
+select values from the result.
 
 =head1 AUTHOR
 
