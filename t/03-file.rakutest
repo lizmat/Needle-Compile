@@ -17,17 +17,35 @@ my @file =
   "file" => $path,
 ;
 
-plan +@file;
+# Ways to check "not file"
+my @notfile =
+  "!file:$path",
+  "not" => "file" => $path,
+;
+
+plan @file + @notfile;
 
 for @file {
     subtest "file: $_.raku()" => {
         plan 3;
 
-        my &file := compile-needle($_);
-        isa-ok &file, Callable, "is it a Callable";
+        my &needle := compile-needle($_);
+        isa-ok &needle, Callable, "is it a Callable";
 
-        is-deeply file("foo"), True,  'matched "foo"';
-        is-deeply file("bar"), False, 'did not match "bar"';
+        is-deeply needle("foo"), True,  'matched "foo"';
+        is-deeply needle("bar"), False, 'did not match "bar"';
+    }
+}
+
+for @notfile {
+    subtest "not file: $_.raku()" => {
+        plan 3;
+
+        my &needle := compile-needle($_);
+        isa-ok &needle, Callable, "is it a Callable";
+
+        is-deeply needle("foo"), False, 'did not match "foo"';
+        is-deeply needle("bar"), True,  'matched "bar"';
     }
 }
 
