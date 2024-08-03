@@ -1,6 +1,8 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
+
+0.0.2  2024-08-03T11:40:49+02:00
     - Add support for JSON::Path: jp: / json-path => / { jp()
     - Add support for $*_ in code needles for external libraries
 
