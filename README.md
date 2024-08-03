@@ -171,10 +171,19 @@ my &uppercased = compile-needle('*.uc');
 
 Assumes the given string is a valid `WhateverCode` specification and attempts to produce that specification accordingly (see: type is "code").
 
+#### starts with ^
+
+```raku
+# accept haystack if it starts with "bar"
+my &needle = compile-needle('^bar');
+```
+
+Assumes the string given (without the `^`) should match with `.starts-with` semantics applied (see: type is "starts-with").
+
 #### starts with file:
 
 ```raku
-# return result of matching patterns in file "always"
+# accept matching patterns in file "always"
 my &needle = compile-needle('file:always');
 ```
 
@@ -189,14 +198,14 @@ my &needle = compile-needle('jp:auth');
 
 Assumes the given string (without the `jp:` prefix) is a valid [`JSON Path`](https://en.wikipedia.org/wiki/JSONPath) specification (see: type is "json-path").
 
-#### starts with ^
+#### starts with s:
 
 ```raku
-# accept haystack if it starts with "bar"
-my &needle = compile-needle('^bar');
+# accept if string contains "foo" *and* "bar"
+my &needle = compile-needle('s:foo &bar');
 ```
 
-Assumes the string given (without the `^`) should match with `.starts-with` semantics applied (see: type is "starts-with").
+Splits the given string (without the `s:` prefix) on whitespace and interpretes the result as a list of needles (see: type is "split").
 
 #### ends with $
 
@@ -348,6 +357,15 @@ my &needle = compile-needle("regex" => "bar");
 ```
 
 Assumes the string is a regex specification to be used as a needle in a call to `.contains`.
+
+### split
+
+```raku
+# accept if string contains "foo" *and* "bar"
+my &needle = compile-needle("split" => 'foo &bar');
+```
+
+This is a meta-type: it splits the given string on whitespace and interpretes the result as a list of needles.
 
 ### starts-with
 

@@ -1,10 +1,13 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
+    - Add support for the "s:" prefix and "split" type, to split
+      a given needle on whitespace to interpret as multiple needles
     - Add support for multiple needles, either in a List, or as
       multiple arguments to "compile-needle"
-    - Add support for the "&" prefix to indicate "and"ing with the
-      result of the previous needle.
+    - Add support for the "&" prefix and "and" type to indicate
+      "and"ing with the result of the previous needle (as opposed
+      to default of "or"ing)
     - Optionally export a Type role for butting strings, which is
       limited to the known types
     - Optionally export a StrType class to allow dispatching on

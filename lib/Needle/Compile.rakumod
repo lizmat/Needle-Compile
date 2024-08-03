@@ -11,7 +11,7 @@ use String::Utils:ver<0.0.24+>:auth<zef:lizmat> <
 
 my constant @ok-types = <
   and auto code contains ends-with equal file json-path not regex
-  starts-with words
+  split starts-with words
 >;
 my constant %ok-types = @ok-types.map: * => 1;
 
@@ -307,11 +307,14 @@ my multi sub handle("auto", Str:D $_, %_) {
     elsif .ends-with('$') {
         handle "ends-with", .chop, %_
     }
+    elsif .starts-with('file:') {
+        handle "file", .substr(5), %_
+    }
     elsif .starts-with('jp:') {
         handle "json-path", .substr(3), %_
     }
-    elsif .starts-with('file:') {
-        handle "file", .substr(5), %_
+    elsif .starts-with('s:') {
+        handle "split", .substr(2), %_
     }
     else {
         handle "contains", $_, %_
@@ -460,6 +463,10 @@ my multi sub handle("not", Any:D $spec, %_) {
     else {
         prefix-not $ast
     }
+}
+
+my multi sub handle("split", Str:D $spec, %_) {
+    handle $spec.words, %_
 }
 
 # Huh?

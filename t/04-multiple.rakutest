@@ -8,6 +8,9 @@ my @or =
   ("&foo", "§bar"),
   ("foo" but Type<contains>, "bar" but Type<words>),
   (:contains<foo>, :words<bar>),
+  "s:foo §bar",
+  "split" => "foo §bar",
+  "foo    §bar" but Type<split>,
 ;
 
 # Ways to check "and"
@@ -18,6 +21,9 @@ my @and =
   ("foo" but Type<contains>, "&§bar"),
   ("foo", "§bar" but Type<and>),
   ("&foo", "§bar" but Type<and>),
+  "s:foo &§bar",
+  "split" => "foo &§bar",
+  "foo    &§bar" but Type<split>,
 ;
 
 plan @or + @and;
