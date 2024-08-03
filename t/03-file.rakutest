@@ -1,0 +1,34 @@
+BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
+use Test;
+use Needle::Compile;
+
+my $path := $*PROGRAM.sibling("always").relative;
+
+# Adding a .type method to an object
+my role Type {
+    has $.type;
+    method raku() { callsame() ~ " but Type('$!type')" }
+}
+
+# Ways to check "file"
+my @file =
+  "file:$path",
+  $path but Type<file>,
+  "file" => $path,
+;
+
+plan +@file;
+
+for @file {
+    subtest "file: $_.raku()" => {
+        plan 3;
+
+        my &file := compile-needle($_);
+        isa-ok &file, Callable, "is it a Callable";
+
+        is-deeply file("foo"), True,  'matched "foo"';
+        is-deeply file("bar"), False, 'did not match "bar"';
+    }
+}
+
+# vim: expandtab shiftwidth=4

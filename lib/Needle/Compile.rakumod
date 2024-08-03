@@ -4,11 +4,8 @@ use v6.*;  # Until 6.e is default
 
 use has-word:ver<0.0.4+>:auth<zef:lizmat>;      # has-word
 use String::Utils:ver<0.0.24+>:auth<zef:lizmat> <
-  has-marks is-lowercase non-word nomark
+  has-marks is-lowercase is-whitespace non-word nomark
 >;
-
-#-------------------------------------------------------------------------------
-# Useful constants
 
 #-------------------------------------------------------------------------------
 # JSON::Path support
@@ -270,6 +267,9 @@ my multi sub handle("auto", Str:D $_, %_) {
     elsif .starts-with('jp:') {
         handle "json-path", .substr(3), %_
     }
+    elsif .starts-with('file:') {
+        handle "file", .substr(5), %_
+    }
     else {
         handle "contains", $_, %_
     }
@@ -356,7 +356,15 @@ my multi sub handle("equal", Str:D $spec, %_) {
     )
 }
 
-my multi sub handle("regex", Str:D $spec is copy, %_) {
+my multi sub handle("file", Str:D $spec, %_) {
+    (my $io := $spec.IO).r
+      ?? handle $io.lines.map({
+             $_ unless is-whitespace($_) || .starts-with('#')
+         }), %_
+      !! fail "Could not read patterns from '$spec'"
+}
+
+my multi sub handle("regex", Str:D $spec, %_) {
     if non-word($spec) {
         my str $i = ignorecase($spec, %_) ?? ' :i' !! '';
         my str $m = ignoremark($spec, %_) ?? ' :m' !! '';
@@ -436,16 +444,14 @@ my multi sub compile-needle(*%_) {
     }
 }
 
-my multi sub compile-needle(*@spec, *%_) {
-    my @nodes = @spec.map: { handle $_, %_ }
+my multi sub compile-needle($spec, *%_) {
+#say handle $spec, %_;
+    wrap-in-block(handle $spec, %_).EVAL
+}
 
-    if @nodes == 1 {
-#say @nodes.head;
-        wrap-in-block(@nodes.head).EVAL
-    }
-    elsif @nodes {
-        NYI "multiple needles"
-    }
+my multi sub compile-needle(*@spec, *%_) {
+#say handle @spec, %_;
+    wrap-in-block(handle @spec, %_).EVAL
 }
 
 # vim: expandtab shiftwidth=4

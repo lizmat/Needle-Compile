@@ -99,7 +99,7 @@ my sub contains($target, $hit, $miss, $comment, *%_) is test-assertion {
             is-deeply $needle("in{$hit}out"), True,  "hit 'in{$hit}out'";
             is-deeply $needle($miss),         False, "miss '$miss'";
 
-            my $not := compile-needle( (not => $_,) );
+            my $not := compile-needle("not" => $_, |%_);
             isa-ok $not, Callable, "Testing not $_.raku()";
 
             is-deeply $not($hit),          False, "not hit '$hit'";
@@ -154,7 +154,7 @@ my sub starts-with($target, $hit, $miss, $comment, *%_) is test-assertion {
             is-deeply $needle(" $hit"), False, "miss ' $hit'";
             is-deeply $needle($miss),   False, "miss '$miss'";
 
-            my $not := compile-needle( (not => $_,) );
+            my $not := compile-needle("not" => $_, |%_);
             isa-ok $not, Callable, "Testing not $_.raku()";
 
             is-deeply $not($hit),    False, "not hit '$hit'";
@@ -209,7 +209,7 @@ my sub ends-with($target, $hit, $miss, $comment, *%_) is test-assertion {
             is-deeply $needle("$hit "), False, "miss '$hit '";
             is-deeply $needle($miss),   False, "miss '$miss'";
 
-            my $not := compile-needle( (not => $_,) );
+            my $not := compile-needle("not" => $_, |%_);
             isa-ok $not, Callable, "Testing not $_.raku()";
 
             is-deeply $not($hit),    False, "not hit '$hit'";
@@ -261,7 +261,7 @@ my sub equal($target, $hit, $miss, $comment, *%_) is test-assertion {
             is-deeply $needle(" $hit "), False, "miss ' $hit '";
             is-deeply $needle($miss),    False, "miss '$miss'";
 
-            my $not := compile-needle( (not => $_,) );
+            my $not := compile-needle("not" => $_, |%_);
             isa-ok $not, Callable, "Testing not $_.raku()";
 
             is-deeply $not($hit),     False, "not hit '$hit'";
@@ -310,7 +310,7 @@ my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
             is-deeply $needle("oo{$hit}ff"), False, "miss 'oo{$hit}ff'";
             is-deeply $needle($miss),        False, "miss '$miss'";
 
-            my $not := compile-needle( (not => $_,), |%_ );
+            my $not := compile-needle("not" => $_, |%_ );
             isa-ok $not, Callable, "Testing not $_.raku()";
 
             is-deeply $not($hit),         False, "not hit '$hit'";

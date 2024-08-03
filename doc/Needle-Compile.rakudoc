@@ -180,6 +180,19 @@ my &uppercased = compile-needle('*.uc');
 Assumes the given string is a valid C<WhateverCode> specification and
 attempts to produce that specification accordingly (see: type is "code").
 
+=head4 starts with file:
+
+=begin code :lang<raku>
+
+# return result of matching patterns in file "always"
+my &needle = compile-needle('file:always');
+
+=end code
+
+Assumes the given string (without the C<file:> prefix) is a valid path
+specification, pointing to a file containing the patterns to be used
+(see: type is "file").
+
 =head4 starts with jp:
 
 =begin code :lang<raku>
@@ -314,6 +327,25 @@ my &needle = compile-needle("equal" => "bar");
 
 Assumes the string is a needle to compare with the haystack using infix
 C<eq> semantics.
+
+=head3 file
+
+=begin code :lang<raku>
+
+# return result of matching patterns in file "always"
+my &needle = compile-needle("file" => 'always');
+
+=end code
+
+Assumes the given string is a valid path specification, pointing to a
+file containing the patterns to be used.
+
+The following types of lines will be ignored:
+=item empty lines
+=item lines consisting of whitespace only
+=item lines starting with "#"
+
+=head4 starts with jp:
 
 =head3 json-path
 

@@ -146,6 +146,15 @@ my &uppercased = compile-needle('*.uc');
 
 Assumes the given string is a valid `WhateverCode` specification and attempts to produce that specification accordingly (see: type is "code").
 
+#### starts with file:
+
+```raku
+# return result of matching patterns in file "always"
+my &needle = compile-needle('file:always');
+```
+
+Assumes the given string (without the `file:` prefix) is a valid path specification, pointing to a file containing the patterns to be used (see: type is "file").
+
 #### starts with jp:
 
 ```raku
@@ -246,6 +255,25 @@ my &needle = compile-needle("equal" => "bar");
 ```
 
 Assumes the string is a needle to compare with the haystack using infix `eq` semantics.
+
+### file
+
+```raku
+# return result of matching patterns in file "always"
+my &needle = compile-needle("file" => 'always');
+```
+
+Assumes the given string is a valid path specification, pointing to a file containing the patterns to be used.
+
+The following types of lines will be ignored:
+
+  * empty lines
+
+  * lines consisting of whitespace only
+
+  * lines starting with "#"
+
+#### starts with jp:
 
 ### json-path
 

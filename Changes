@@ -1,6 +1,8 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
+    - Add support for reading patterns from a file, with the
+      "file:" prefix and the "file" type
 
 0.0.2  2024-08-03T11:40:49+02:00
     - Add support for JSON::Path: jp: / json-path => / { jp()
