@@ -1,6 +1,8 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
+    - Optionally export a Type role as well, which is limited
+      to the known types
     - Add support for reading patterns from a file, with the
       "file:" prefix and the "file" type
 

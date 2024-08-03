@@ -8,6 +8,27 @@ use String::Utils:ver<0.0.24+>:auth<zef:lizmat> <
 >;
 
 #-------------------------------------------------------------------------------
+
+my constant @ok-types = <
+  auto code contains ends-with equal file json-path not regex starts-with words
+>;
+my constant %ok-types = @ok-types.map: * => 1;
+
+my role Type {
+    has $.type;
+
+    method TWEAK() is hidden-from-backtrace {
+        fail qq:to/ERROR/ unless %ok-types{$!type};
+Type must be one of:
+  @ok-types.join("\n  ")
+not: '$!type'
+ERROR
+    }
+
+    method raku() { callsame() ~ " but Type('$!type')" }
+}
+
+#-------------------------------------------------------------------------------
 # JSON::Path support
 
 my $json-path;
@@ -428,7 +449,7 @@ my multi sub handle(Str:D $type, Any:D $spec, %_) {
 #-------------------------------------------------------------------------------
 # The frontend
 
-my proto sub compile-needle(|) is export {*}
+my proto sub compile-needle(|) {*}
 
 my multi sub compile-needle(*%_) {
     if %_ {
@@ -452,6 +473,22 @@ my multi sub compile-needle($spec, *%_) {
 my multi sub compile-needle(*@spec, *%_) {
 #say handle @spec, %_;
     wrap-in-block(handle @spec, %_).EVAL
+}
+
+#-------------------------------------------------------------------------------
+# Exporting logic
+
+my sub EXPORT(*@names) {
+    my %export;
+    %export<&compile-needle> := &compile-needle;
+
+    for @names {
+         if $_ eq 'Type' {
+             %export<Type> := Type;
+         }
+    }
+
+    %export.Map
 }
 
 # vim: expandtab shiftwidth=4

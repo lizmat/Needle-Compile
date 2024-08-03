@@ -1,7 +1,7 @@
 BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 
 use Test;
-use Needle::Compile;
+use Needle::Compile <compile-needle Type>;
 
 plan 8;
 
@@ -21,12 +21,6 @@ run-nameds &words, "foo", "foo", "bar", "words simple 'foo'";
 
 #-------------------------------------------------------------------------------
 # Infrastructure
-
-# Adding a .type method to an object
-my role Type {
-    has $.type;
-    method raku() { callsame() ~ " but Type('$!type')" }
-}
 
 # Filter out the targets that are pure strings
 my sub autonots(@targets) {

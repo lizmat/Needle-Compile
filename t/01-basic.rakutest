@@ -1,9 +1,10 @@
 BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 use Test;
-use Needle::Compile;
+use Needle::Compile <compile-needle Type>;
 
-plan 1;
+plan 2;
 
 ok MY::<&compile-needle>, 'did compile-needle get exported';
+ok MY::<Type>:exists,     'did Type get exported';
 
 # vim: expandtab shiftwidth=4

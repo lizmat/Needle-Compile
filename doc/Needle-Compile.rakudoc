@@ -64,15 +64,28 @@ the type.
 
 =begin code :lang<raku>
 
-my role Type { has $.type }
+use Needle::Compile "Type";
 
 # accept haystack if "bar" as word is found
 my &needle = compile-needle("bar" but Type("words"));
 
 =end code
 
-If the needle specified supports a C<.type> method, then that method will
-be called to determine the type.
+If the specified needle supports a C<.type> method, then that method will
+be called to determine the type.  This can be done with the C<Type> role
+that is optionally exported.
+
+If you specify C<"Type"> in the C<use> statement, a C<Type> role will be
+exported that allows you to mixin a type with a given string.  The C<Type>
+role will only allow known types in its specification.  If that is too
+restrictive for your application, you can define your own C<Type> role.
+Which can be as simple as:
+
+=begin code :lang<raku>
+
+my role Type { $.type }
+
+=end code
 
 =head2 Modifiers
 

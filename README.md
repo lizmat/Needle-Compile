@@ -54,13 +54,19 @@ By specifying a needle as a `Pair`, with the key being a string describing the t
 ### mixed in
 
 ```raku
-my role Type { has $.type }
+use Needle::Compile "Type";
 
 # accept haystack if "bar" as word is found
 my &needle = compile-needle("bar" but Type("words"));
 ```
 
-If the needle specified supports a `.type` method, then that method will be called to determine the type.
+If the specified needle supports a `.type` method, then that method will be called to determine the type. This can be done with the `Type` role that is optionally exported.
+
+If you specify `"Type"` in the `use` statement, a `Type` role will be exported that allows you to mixin a type with a given string. The `Type` role will only allow known types in its specification. If that is too restrictive for your application, you can define your own `Type` role. Which can be as simple as:
+
+```raku
+my role Type { $.type }
+```
 
 Modifiers
 ---------
