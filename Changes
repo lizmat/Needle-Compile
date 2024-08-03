@@ -1,6 +1,8 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
+
+0.0.3  2024-08-03T21:51:52+02:00
     - Add support for the "s:" prefix and "split" type, to split
       a given needle on whitespace to interpret as multiple needles
     - Add support for multiple needles, either in a List, or as
