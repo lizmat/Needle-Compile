@@ -27,6 +27,13 @@ my sub autonots(@targets) {
     @targets.map: { "!$_" if .WHAT =:= Str }
 }
 
+# Compile a needle for the given pattern and do basic sanity test
+sub needle($_, %_) is test-assertion {
+    my $needle := compile-needle($_, |%_);
+    isa-ok $needle, Callable, "Testing $_.raku()";
+    $needle
+}
+
 # Run the given needle specification for all possible named arguments
 INIT my @nameds = (), :ignorecase, :ignoremark, :smartcase, :smartmark;
 my sub run-nameds(&code, |c) is test-assertion {
@@ -50,8 +57,7 @@ my sub code($target, $source, $result, $comment) is test-assertion {
         plan 2 * @targets;
 
         for @targets {
-            my $needle := compile-needle($_);
-            isa-ok $needle, Callable, "Testing $_.raku()";
+            my $needle := needle($_, %());
 
             is-deeply $needle($source), $result, "'$source' transformed ok";
         }
@@ -83,28 +89,27 @@ my sub contains($target, $hit, $miss, $comment, *%_) is test-assertion {
 
         my @autonots = autonots @targets;
 
-        plan 8 * @targets + 4 * @autonots;
+        plan 12 * @targets + 4 * @autonots;
 
         for @targets {
-            my $needle := compile-needle($_, |%_);
-            isa-ok $needle, Callable, "Testing $_.raku()";
-
+            my $needle := needle($_, %_);
             is-deeply $needle($hit),          True,  "hit '$hit'";
             is-deeply $needle("in{$hit}out"), True,  "hit 'in{$hit}out'";
             is-deeply $needle($miss),         False, "miss '$miss'";
 
-            my $not := compile-needle("not" => $_, |%_);
-            isa-ok $not, Callable, "Testing not $_.raku()";
-
+            my $not := needle("not" => $_, %_);
             is-deeply $not($hit),          False, "not hit '$hit'";
             is-deeply $not("in{$hit}out"), False, "not hit 'in{$hit}out'";
             is-deeply $not($miss),         True,  "not miss '$miss'";
+
+            my $and := needle($_, %_);
+            is-deeply $and($hit),          True,  "and hit '$hit'";
+            is-deeply $and("in{$hit}out"), True,  "and hit 'in{$hit}out'";
+            is-deeply $and($miss),         False, "and miss '$miss'";
         }
 
         for @autonots {
-            my $not := compile-needle($_, |%_);
-            isa-ok $not, Callable, "Testing '$_'";
-
+            my $not := needle($_, %_);
             is-deeply $not($hit),          False, "! hit '$hit'";
             is-deeply $not("in{$hit}out"), False, "! hit 'in{$hit}out'";
             is-deeply $not($miss),         True,  "! miss '$miss'";
@@ -138,28 +143,27 @@ my sub starts-with($target, $hit, $miss, $comment, *%_) is test-assertion {
 
         my @autonots = autonots @targets;
 
-        plan 8 * @targets + 4 * @autonots;
+        plan 12 * @targets + 4 * @autonots;
 
         for @targets {
-            my $needle := compile-needle($_, |%_);
-            isa-ok $needle, Callable, "Testing $_.raku()";
-
+            my $needle := needle($_, %_);
             is-deeply $needle($hit),    True,  "hit '$hit'";
             is-deeply $needle(" $hit"), False, "miss ' $hit'";
             is-deeply $needle($miss),   False, "miss '$miss'";
 
-            my $not := compile-needle("not" => $_, |%_);
-            isa-ok $not, Callable, "Testing not $_.raku()";
-
+            my $not := needle("not" => $_, %_);
             is-deeply $not($hit),    False, "not hit '$hit'";
             is-deeply $not(" $hit"), True,  "not miss ' $hit'";
             is-deeply $not($miss),   True,  "not miss '$miss'";
+
+            my $and := needle("and" => $_, %_);
+            is-deeply $and($hit),    True,  "and hit '$hit'";
+            is-deeply $and(" $hit"), False, "and miss ' $hit'";
+            is-deeply $and($miss),   False, "and miss '$miss'";
         }
 
         for @autonots {
-            my $not := compile-needle($_, |%_);
-            isa-ok $not, Callable, "Testing !$_";
-
+            my $not := needle($_, %_);
             is-deeply $not($hit),    False, "! hit '$hit'";
             is-deeply $not(" $hit"), True,  "! miss ' $hit'";
             is-deeply $not($miss),   True,  "! miss '$miss'";
@@ -193,28 +197,27 @@ my sub ends-with($target, $hit, $miss, $comment, *%_) is test-assertion {
 
         my @autonots = autonots @targets;
 
-        plan 8 * @targets + 4 * @autonots;
+        plan 12 * @targets + 4 * @autonots;
 
         for @targets {
-            my $needle := compile-needle($_, |%_);
-            isa-ok $needle, Callable, "Testing $_.raku()";
-
+            my $needle := needle($_, %_);
             is-deeply $needle($hit),    True,  "hit '$hit'";
             is-deeply $needle("$hit "), False, "miss '$hit '";
             is-deeply $needle($miss),   False, "miss '$miss'";
 
-            my $not := compile-needle("not" => $_, |%_);
-            isa-ok $not, Callable, "Testing not $_.raku()";
-
+            my $not := needle("not" => $_, %_);
             is-deeply $not($hit),    False, "not hit '$hit'";
             is-deeply $not("$hit "), True,  "not miss '$hit '";
             is-deeply $not($miss),   True,  "not miss '$miss'";
+
+            my $and := needle($_, %_);
+            is-deeply $and($hit),    True,  "and hit '$hit'";
+            is-deeply $and("$hit "), False, "and miss '$hit '";
+            is-deeply $and($miss),   False, "and miss '$miss'";
         }
 
         for @autonots {
-            my $not := compile-needle($_, |%_);
-            isa-ok $not, Callable, "Testing !$_";
-
+            my $not := needle($_, %_);
             is-deeply $not($hit),    False, "! hit '$hit'";
             is-deeply $not("$hit "), True,  "! miss '$hit '";
             is-deeply $not($miss),   True,  "! miss '$miss'";
@@ -245,28 +248,27 @@ my sub equal($target, $hit, $miss, $comment, *%_) is test-assertion {
 
         my @autonots = autonots @targets;
 
-        plan 8 * @targets + 4 * @autonots;
+        plan 12 * @targets + 4 * @autonots;
 
         for @targets {
-            my $needle := compile-needle($_, |%_);
-            isa-ok $needle, Callable, "Testing $_.raku()";
-
+            my $needle := needle($_, %_);
             is-deeply $needle($hit),     True,  "hit '$hit'";
             is-deeply $needle(" $hit "), False, "miss ' $hit '";
             is-deeply $needle($miss),    False, "miss '$miss'";
 
-            my $not := compile-needle("not" => $_, |%_);
-            isa-ok $not, Callable, "Testing not $_.raku()";
-
+            my $not := needle("not" => $_, %_);
             is-deeply $not($hit),     False, "not hit '$hit'";
             is-deeply $not(" $hit "), True,  "not miss ' $hit '";
             is-deeply $not($miss),    True,  "not miss '$miss'";
+
+            my $and := needle("and" => $_, %_);
+            is-deeply $and($hit),     True,  "and hit '$hit'";
+            is-deeply $and(" $hit "), False, "and miss ' $hit '";
+            is-deeply $and($miss),    False, "and miss '$miss'";
         }
 
         for @autonots {
-            my $not := compile-needle($_, |%_);
-            isa-ok $not, Callable, "Testing !$_";
-
+            my $not := needle($_, %_);
             is-deeply $not($hit),     False, "! hit '$hit'";
             is-deeply $not(" $hit "), True,  "! miss ' $hit '";
             is-deeply $not($miss),    True,  "! miss '$miss'";
@@ -292,32 +294,33 @@ my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
 
         my @autonots = autonots @targets;
 
-        plan 12 * @targets + 6 * @autonots;
+        plan 18 * @targets + 6 * @autonots;
 
         for @targets {
-            my $needle := compile-needle($_, |%_);
-            isa-ok $needle, Callable, "Testing $_.raku()";
-
+            my $needle := needle($_, %_);
             is-deeply $needle($hit),         True,  "hit '$hit'";
             is-deeply $needle(" $hit "),     True,  "hit ' $hit '";
             is-deeply $needle(":$hit:"),     True,  "hit ':$hit:'";
             is-deeply $needle("oo{$hit}ff"), False, "miss 'oo{$hit}ff'";
             is-deeply $needle($miss),        False, "miss '$miss'";
 
-            my $not := compile-needle("not" => $_, |%_ );
-            isa-ok $not, Callable, "Testing not $_.raku()";
-
+            my $not := needle("not" => $_, %_ );
             is-deeply $not($hit),         False, "not hit '$hit'";
             is-deeply $not(" $hit "),     False, "not hit ' $hit '";
             is-deeply $not(":$hit:"),     False, "not hit ':$hit:'";
             is-deeply $not("oo{$hit}ff"), True,  "not miss 'oo{$hit}ff'";
             is-deeply $not($miss),        True,  "not miss '$miss'";
+
+            my $and := needle("and" => $_, %_);
+            is-deeply $and($hit),         True,  "and hit '$hit'";
+            is-deeply $and(" $hit "),     True,  "and hit ' $hit '";
+            is-deeply $and(":$hit:"),     True,  "and hit ':$hit:'";
+            is-deeply $and("oo{$hit}ff"), False, "and miss 'oo{$hit}ff'";
+            is-deeply $and($miss),        False, "and miss '$miss'";
         }
 
         for @autonots {
-            my $not := compile-needle($_, |%_);
-            isa-ok $not, Callable, "Testing !$_";
-
+            my $not := needle($_, %_);
             is-deeply $not($hit),         False, "! hit '$hit'";
             is-deeply $not(" $hit "),     False, "! hit ' $hit '";
             is-deeply $not(":$hit:"),     False, "! hit ':$hit:'";

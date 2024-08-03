@@ -1,10 +1,17 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
-    - Optionally export a Type role as well, which is limited
-      to the known types
+    - Add support for multiple needles, either in a List, or as
+      multiple arguments to "compile-needle"
+    - Add support for the "&" prefix to indicate "and"ing with the
+      result of the previous needle.
+    - Optionally export a Type role for butting strings, which is
+      limited to the known types
+    - Optionally export a StrType class to allow dispatching on
+      butted strings
     - Add support for reading patterns from a file, with the
       "file:" prefix and the "file" type
+    - Add documentation and many more tests
 
 0.0.2  2024-08-03T11:40:49+02:00
     - Add support for JSON::Path: jp: / json-path => / { jp()

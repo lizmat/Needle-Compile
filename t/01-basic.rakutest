@@ -1,10 +1,15 @@
 BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 use Test;
-use Needle::Compile <compile-needle Type>;
+use Needle::Compile <compile-needle Type StrType>;
 
-plan 2;
+plan 6;
 
 ok MY::<&compile-needle>, 'did compile-needle get exported';
 ok MY::<Type>:exists,     'did Type get exported';
+ok MY::<StrType>:exists,  'did StrType get exported';
+
+ ok "foo" but Type<words> ~~ Str,     "it's a string";
+ ok "foo" but Type<words> ~~ StrType, "it's a butted string";
+nok "foo"                 ~~ StrType, "not a butted string";
 
 # vim: expandtab shiftwidth=4

@@ -87,6 +87,19 @@ my role Type { $.type }
 
 =end code
 
+If you want to be able to dispatch on strings that have a C<but Type>
+mixed in, you can also import the C<StrType> class:
+
+=begin code :lang<raku>
+
+use Needle::Compile <Type StrType>;
+
+say "foo" but Type<words> ~~ Str;      # True
+say "foo" but Type<words> ~~ StrType;  # True
+say "foo"                 ~~ StrType;  # False
+
+=end code
+
 =head2 Modifiers
 
 Many types of matches support C<ignorecase> and C<ignoremark> semantics.
@@ -164,7 +177,20 @@ my &needle = compile-needle('!bar');
 =end code
 
 This is a meta-marker.  Assumes the string given (without the C<!>) should
-be processed, and its result negated (see: type is "not")
+be processed, and its result negated (see: type is "not").
+
+=head4 starts with &
+
+=begin code :lang<raku>
+
+# accept haystack if "foo" and "bar" are found
+my &needle = compile-needle('foo', '&bar');
+
+=end code
+
+This is a meta-marker.  Marks the needle produced for the given string
+(without the C<&>) as needing an C<&&> infix with its predecessor
+be processed, rather than the default C<||> infix (see: type is "and").
 
 =head4 starts with §
 
@@ -291,6 +317,20 @@ my &needle = compile-needle("bar");
 
 Assumes the string given should match with C<.contains> semantics
 applied (see: type is "contains").
+
+=head3 and
+
+=begin code :lang<raku>
+
+# accept haystack if "foo" and "bar" are found
+my &needle = compile-needle('foo', "and" => 'bar');
+
+=end code
+
+This is a meta-marker.  Marks the needle produced for the given string
+as needing an C<&&> infix with its predecessor be processed, rather
+than the default C<||> infix.  Has no meaning on the first (or only)
+needle in a list of needles.
 
 =head3 code
 

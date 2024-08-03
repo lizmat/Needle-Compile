@@ -20,6 +20,7 @@ my @file =
 # Ways to check "not file"
 my @notfile =
   "!file:$path",
+  "not" => "file:$path",
   "not" => "file" => $path,
 ;
 

@@ -1,0 +1,59 @@
+BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
+use Test;
+use Needle::Compile "Type";
+
+# Ways to check "or"
+my @or =
+  ("foo", "§bar"),
+  ("&foo", "§bar"),
+  ("foo" but Type<contains>, "bar" but Type<words>),
+  (:contains<foo>, :words<bar>),
+;
+
+# Ways to check "and"
+my @and =
+  ("foo", "&§bar"),
+  ("foo" but Type<contains>, "and" => "bar" but Type<words>),
+  (:contains<foo>, :and(:words<bar>)),
+  ("foo" but Type<contains>, "&§bar"),
+  ("foo", "§bar" but Type<and>),
+  ("&foo", "§bar" but Type<and>),
+;
+
+plan @or + @and;
+
+for @or {
+    subtest "or: $_.raku()" => {
+        plan 7;
+
+        my &needle := compile-needle($_);
+        isa-ok &needle, Callable, "is it a Callable";
+
+        for "foo", "bar", "foo bar", "ofoos" {
+            is-deeply needle($_), True,  "matched '$_'";
+        }
+
+        for "baz", "barra" {
+            is-deeply needle($_), False, "did not match '$_'";
+        }
+    }
+}
+
+for @and {
+    subtest "and: $_.raku()" => {
+        plan 8;
+
+        my &needle := compile-needle($_);
+        isa-ok &needle, Callable, "is it a Callable";
+
+        for "foo bar", "foozo bar", "foo bar" {
+            is-deeply needle($_), True,  "matched '$_'";
+        }
+
+        for "foo", "baz", "barra", "foo barra" {
+            is-deeply needle($_), False, "did not match '$_'";
+        }
+    }
+}
+
+# vim: expandtab shiftwidth=4

@@ -10,7 +10,8 @@ use String::Utils:ver<0.0.24+>:auth<zef:lizmat> <
 #-------------------------------------------------------------------------------
 
 my constant @ok-types = <
-  auto code contains ends-with equal file json-path not regex starts-with words
+  and auto code contains ends-with equal file json-path not regex
+  starts-with words
 >;
 my constant %ok-types = @ok-types.map: * => 1;
 
@@ -25,8 +26,10 @@ not: '$!type'
 ERROR
     }
 
-    method raku() { callsame() ~ " but Type('$!type')" }
+    method Str (Type:D:) { self ~ "" }
+    method raku(Type:D:) { callsame() ~ " but Type('$!type')" }
 }
+my constant StrType = Str but Type;
 
 #-------------------------------------------------------------------------------
 # JSON::Path support
@@ -231,36 +234,55 @@ my proto sub handle(|) {*}
 
 # Initial distribution
 my multi sub handle(@_, %_) {
-    my $type :=  @_.?type // "auto";
+    my $type :=  @_.head.?type // "auto";
     my $ast := handle $type, @_.head, %_;
 
     # All but the first element
     for @_.skip {
+        my $right := handle $_, %_;
+
         $ast := RakuAST::ApplyInfix.new(
           left  => $ast,
-          infix => RakuAST::Infix.new("||"),
-          right => handle($type, $_, %_)
+          infix => RakuAST::Infix.new(
+            ($right.?type // "") eq 'and' ?? "&&" !! "||"
+          ),
+          right => $right,
         );
     }
 
     $ast
 }
+
 my multi sub handle(Pair:D $_, %_) {
     handle .key, .value, %_
 }
+
+my multi sub handle(StrType:D $_, %_) {
+    handle(.type, .Str, %_)
+}
+
 my multi sub handle(Str:D $_, %nameds) {
     if .?type -> $type {
-        handle($type, $_, %nameds);
+        handle($type, .Str, %nameds);
     }
     else {
         handle("auto", $_, %nameds);
     }
 }
 
+#-------------------------------------------------------------------------------
 # The "auto" distributors
+
+my multi sub handle("auto", Pair:D $_, %_) {
+    handle $_, %_
+}
+
 my multi sub handle("auto", Str:D $_, %_) {
     if .starts-with('!') {
         handle "not", .substr(1), %_
+    }
+    elsif .starts-with('&') {
+        handle "and", .substr(1), %_
     }
     elsif .starts-with('§') {
         handle "words", .substr(1), %_
@@ -423,6 +445,11 @@ my multi sub handle("words", Str:D $spec, %_) {
 
 #-------------------------------------------------------------------------------
 # Handlers that modify other handlers
+
+my multi sub handle("and", Any:D $spec, %_) {
+    handle($spec, %_) but Type<and>;
+}
+
 my multi sub handle("not", Any:D $spec, %_) {
     my $ast := handle $spec, %_;
     if $ast ~~ RakuAST::StatementList {
@@ -465,6 +492,11 @@ my multi sub compile-needle(*%_) {
     }
 }
 
+my multi sub compile-needle(Positional:D $spec is raw, *%_) {
+#say handle $spec, %_;
+    wrap-in-block(handle $spec, %_).EVAL
+}
+
 my multi sub compile-needle($spec, *%_) {
 #say handle $spec, %_;
     wrap-in-block(handle $spec, %_).EVAL
@@ -485,6 +517,9 @@ my sub EXPORT(*@names) {
     for @names {
          if $_ eq 'Type' {
              %export<Type> := Type;
+         }
+         elsif $_ eq 'StrType' {
+             %export<StrType> := StrType;
          }
     }
 

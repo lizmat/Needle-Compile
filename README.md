@@ -68,6 +68,16 @@ If you specify `"Type"` in the `use` statement, a `Type` role will be exported t
 my role Type { $.type }
 ```
 
+If you want to be able to dispatch on strings that have a `but Type` mixed in, you can also import the `StrType` class:
+
+```raku
+use Needle::Compile <Type StrType>;
+
+say "foo" but Type<words> ~~ Str;      # True
+say "foo" but Type<words> ~~ StrType;  # True
+say "foo"                 ~~ StrType;  # False
+```
+
 Modifiers
 ---------
 
@@ -129,7 +139,16 @@ This is the default type of match. It looks at the given string for a number of 
 my &needle = compile-needle('!bar');
 ```
 
-This is a meta-marker. Assumes the string given (without the `!`) should be processed, and its result negated (see: type is "not")
+This is a meta-marker. Assumes the string given (without the `!`) should be processed, and its result negated (see: type is "not").
+
+#### starts with &
+
+```raku
+# accept haystack if "foo" and "bar" are found
+my &needle = compile-needle('foo', '&bar');
+```
+
+This is a meta-marker. Marks the needle produced for the given string (without the `&`) as needing an `&&` infix with its predecessor be processed, rather than the default `||` infix (see: type is "and").
 
 #### starts with §
 
@@ -223,6 +242,15 @@ my &needle = compile-needle("bar");
 ```
 
 Assumes the string given should match with `.contains` semantics applied (see: type is "contains").
+
+### and
+
+```raku
+# accept haystack if "foo" and "bar" are found
+my &needle = compile-needle('foo', "and" => 'bar');
+```
+
+This is a meta-marker. Marks the needle produced for the given string as needing an `&&` infix with its predecessor be processed, rather than the default `||` infix. Has no meaning on the first (or only) needle in a list of needles.
 
 ### code
 
