@@ -2,7 +2,12 @@ BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 use Test;
 use Needle::Compile <compile-needle Type StrType>;
 
-plan 6;
+my constant @ok-types = <
+  and auto code contains ends-with equal file json-path not regex
+  split starts-with words
+>;
+
+plan 7 + @ok-types;
 
 ok MY::<&compile-needle>, 'did compile-needle get exported';
 ok MY::<Type>:exists,     'did Type get exported';
@@ -11,5 +16,10 @@ ok MY::<StrType>:exists,  'did StrType get exported';
  ok "foo" but Type<words> ~~ Str,     "it's a string";
  ok "foo" but Type<words> ~~ StrType, "it's a butted string";
 nok "foo"                 ~~ StrType, "not a butted string";
+
+is-deeply StrType.ACCEPTS("foo"), False, "is 'foo' *NOT* acceptable";
+for @ok-types {
+    is-deeply StrType.ACCEPTS($_), True, "is '$_' acceptable";
+}
 
 # vim: expandtab shiftwidth=4

@@ -78,6 +78,15 @@ say "foo" but Type<words> ~~ StrType;  # True
 say "foo"                 ~~ StrType;  # False
 ```
 
+Furthermore, you can call the `.ACCEPTS` method on the `StrTtype` class to check whether a given type string is valid:
+
+```raku
+use Needle::Compile <Type StrType>;
+
+say StrType.ACCEPTS("contains");    # True
+say StrType.ACCEPTS("frobnicate");  # False
+```
+
 Modifiers
 ---------
 

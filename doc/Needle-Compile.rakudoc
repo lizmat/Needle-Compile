@@ -100,6 +100,18 @@ say "foo"                 ~~ StrType;  # False
 
 =end code
 
+Furthermore, you can call the C<.ACCEPTS> method on the C<StrTtype>
+class to check whether a given type string is valid:
+
+=begin code :lang<raku>
+
+use Needle::Compile <Type StrType>;
+
+say StrType.ACCEPTS("contains");    # True
+say StrType.ACCEPTS("frobnicate");  # False
+
+=end code
+
 =head2 Modifiers
 
 Many types of matches support C<ignorecase> and C<ignoremark> semantics.

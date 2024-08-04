@@ -8,12 +8,13 @@ use String::Utils:ver<0.0.24+>:auth<zef:lizmat> <
 >;
 
 #-------------------------------------------------------------------------------
+# Type mixin related
 
 my constant @ok-types = <
   and auto code contains ends-with equal file json-path not regex
   split starts-with words
 >;
-my constant %ok-types = @ok-types.map: * => 1;
+my constant %ok-types = @ok-types.map: * => True;
 
 my role Type {
     has $.type;
@@ -26,6 +27,7 @@ not: '$!type'
 ERROR
     }
 
+    method ACCEPTS($_)   { %ok-types{.Str} // False }
     method Str (Type:D:) { self ~ "" }
     method raku(Type:D:) { callsame() ~ " but Type('$!type')" }
 }
@@ -143,7 +145,21 @@ my &jp = my sub jp-stub(str $pattern) {
     (&jp = anon sub jp(str $pattern) { JP.new($pattern) })($pattern)
 }
 
-#-------------------------------------------------------------------------------# Helper subs
+#-------------------------------------------------------------------------------
+# Generic helper subs
+
+# Return True if ignorecase should be used
+my sub ignorecase(Str:D $target, %_) {
+    %_<ignorecase> || (%_<smartcase> && is-lowercase($target))
+}
+
+# Return True if ignoremark should be used
+my sub ignoremark(Str:D $target, %_) {
+    %_<ignoremark> || (%_<smartmark> && !has-marks($target))
+}
+
+#-------------------------------------------------------------------------------
+# Helper subs that create ASTs
 
 my proto sub make-method(|) {*}
 
@@ -180,16 +196,6 @@ my multi sub make-method(
         args => $args
       )
     )
-}
-
-# Return True if ignorecase should be used
-my sub ignorecase(Str:D $target, %_) {
-    %_<ignorecase> || (%_<smartcase> && is-lowercase($target))
-}
-
-# Return True if ignoremark should be used
-my sub ignoremark(Str:D $target, %_) {
-    %_<ignoremark> || (%_<smartmark> && !has-marks($target))
 }
 
 # Wrap a given AST in a block with $_ as the only positional argument
@@ -258,15 +264,15 @@ my multi sub handle(Pair:D $_, %_) {
 }
 
 my multi sub handle(StrType:D $_, %_) {
-    handle(.type, .Str, %_)
+    handle .type, .Str, %_
 }
 
 my multi sub handle(Str:D $_, %nameds) {
     if .?type -> $type {
-        handle($type, .Str, %nameds);
+        handle $type, .Str, %nameds
     }
     else {
-        handle("auto", $_, %nameds);
+        handle "auto", $_, %nameds
     }
 }
 

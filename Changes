@@ -1,6 +1,8 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
+    - Add StrType.ACCEPTS method for checking whether a given type
+      string is valid or not
 
 0.0.3  2024-08-03T21:51:52+02:00
     - Add support for the "s:" prefix and "split" type, to split
