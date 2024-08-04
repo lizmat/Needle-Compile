@@ -435,6 +435,8 @@ The following types of lines will be ignored:
 =item lines consisting of whitespace only
 =item lines starting with "#"
 
+Note that the filename C<"-"> will be interpreted as "read from STDIN".
+
 =head3 json-path
 
 =begin code :lang<raku>

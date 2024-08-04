@@ -419,11 +419,25 @@ my multi sub handle("equal", Str:D $spec, %_) {
 }
 
 my multi sub handle("file", Str:D $spec, %_) {
-    (my $io := $spec.IO).r
-      ?? handle $io.lines.map({
+
+    # helper sub for getting pattern(s) from file
+    sub read-patterns($io) {
+        my @lines is List = $io.lines.map: {
              $_ unless is-whitespace($_) || .starts-with('#')
-         }), %_
-      !! fail "Could not read patterns from '$spec'"
+        }
+        warn "No patterns found in '$spec'" unless @lines;
+
+        @lines
+    }
+
+    if $spec eq '-' {
+        handle read-patterns($*IN), %_
+    }
+    else {
+        (my $io := $spec.IO).e && $io.r
+          ?? handle read-patterns($io), %_
+          !! fail "Could not read patterns from '$spec'"
+    }
 }
 
 my multi sub handle("regex", Str:D $spec, %_) {

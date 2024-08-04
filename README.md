@@ -335,6 +335,8 @@ The following types of lines will be ignored:
 
   * lines starting with "#"
 
+Note that the filename `"-"` will be interpreted as "read from STDIN".
+
 ### json-path
 
 ```raku
