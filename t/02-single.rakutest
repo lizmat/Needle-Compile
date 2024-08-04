@@ -3,7 +3,7 @@ BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 use Test;
 use Needle::Compile <compile-needle Type>;
 
-plan 8;
+plan 9;
 
 code '.subst("foo", "bar")', "foo", "bar", 'simple .subst';
 code '.uc',                  "foo", "FOO", 'simple .uc';
@@ -18,6 +18,8 @@ run-nameds &ends-with, "foo", "foo", "bar", "ends with simple 'foo'";
 run-nameds &equal, "foo", "foo", "bar", "equal simple 'foo'";
 
 run-nameds &words, "foo", "foo", "bar", "words simple 'foo'";
+
+run-nameds &regex, "foo", "foo", ":;!", "regex simple 'foo'";
 
 #-------------------------------------------------------------------------------
 # Infrastructure
@@ -326,6 +328,52 @@ my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
             is-deeply $not(":$hit:"),     False, "! hit ':$hit:'";
             is-deeply $not("oo{$hit}ff"), True,  "! miss 'oo{$hit}ff'";
             is-deeply $not($miss),        True,  "! miss '$miss'";
+        }
+    }
+}
+
+#- regex -----------------------------------------------------------------------
+# All possible tests for regex
+my sub regex($target, $hit, $miss, $comment, *%_) is test-assertion {
+    my $named := %_ ?? ", :%_.keys.head()" !! "";
+
+    subtest "regex: $comment$named" => {
+        my $auto := "/ $target /";
+
+        my @targets =
+          $target but Type("regex"),
+          $auto,
+          $auto   but Type("auto"),
+          regex => $target,
+          auto  => $auto,
+        ;
+
+        my @autonots = autonots @targets;
+
+        plan 12 * @targets + 4 * @autonots;
+
+        for @targets {
+            my $needle := needle($_, %_);
+            is-deeply $needle($hit),     True,  "hit '$hit'";
+            is-deeply $needle(" $hit "), True,  "hit ' $hit '";
+            is-deeply $needle($miss),    False, "miss '$miss'";
+
+            my $not := needle("not" => $_, %_ );
+            is-deeply $not($hit),     False, "not hit '$hit'";
+            is-deeply $not(" $hit "), False, "not hit ' $hit '";
+            is-deeply $not($miss),    True,  "not miss '$miss'";
+
+            my $and := needle("and" => $_, %_);
+            is-deeply $and($hit),     True,  "and hit '$hit'";
+            is-deeply $and(" $hit "), True,  "and hit ' $hit '";
+            is-deeply $and($miss),    False, "and miss '$miss'";
+        }
+
+        for @autonots {
+            my $not := needle($_, %_);
+            is-deeply $not($hit),     False, "! hit '$hit'";
+            is-deeply $not(" $hit "), False, "! hit ' $hit '";
+            is-deeply $not($miss),    True,  "! miss '$miss'";
         }
     }
 }
