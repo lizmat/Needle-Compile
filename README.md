@@ -335,8 +335,6 @@ The following types of lines will be ignored:
 
   * lines starting with "#"
 
-#### starts with jp:
-
 ### json-path
 
 ```raku
@@ -399,13 +397,13 @@ Assumes the string is a needle in a call to `.starts-with`.
 
 ```raku
 # accept if any of the needles at given URL matches
-my &domain = compile-needle('url:raku.org/robots.txt');  # assumes https://
-my &url    = compile-needle('url:https://raku.org/robots.txt');
+my &domain = compile-needle("url" => 'raku.org/robots.txt');
+my &url    = compile-needle("url" => 'http://example.com/patterns');
 ```
 
-Interpretes the given string (without the `url:` prefix) as a URL from which to obtain the needles from.
+Interpretes the given string as a URL from which to obtain the needles from. Assumes `https://` if no protocol is specified.
 
-Assumes `https://` if no protocol is specified.
+Requires the `curl` program to be installed and runnable. All protocols supported by `curl` can be used in the URL specification.
 
 ### words
 

@@ -435,8 +435,6 @@ The following types of lines will be ignored:
 =item lines consisting of whitespace only
 =item lines starting with "#"
 
-=head4 starts with jp:
-
 =head3 json-path
 
 =begin code :lang<raku>
@@ -521,15 +519,16 @@ Assumes the string is a needle in a call to C<.starts-with>.
 =begin code :lang<raku>
 
 # accept if any of the needles at given URL matches
-my &domain = compile-needle('url:raku.org/robots.txt');  # assumes https://
-my &url    = compile-needle('url:https://raku.org/robots.txt');
+my &domain = compile-needle("url" => 'raku.org/robots.txt');
+my &url    = compile-needle("url" => 'http://example.com/patterns');
 
 =end code
 
-Interpretes the given string (without the C<url:> prefix) as a URL
-from which to obtain the needles from.
+Interpretes the given string as a URL from which to obtain the needles
+from.  Assumes C<https://> if no protocol is specified.
 
-Assumes C<https://> if no protocol is specified.
+Requires the C<curl> program to be installed and runnable.  All protocols
+supported by C<curl> can be used in the URL specification.
 
 =head3 words
 
