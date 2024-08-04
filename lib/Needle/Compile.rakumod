@@ -218,11 +218,13 @@ my sub wrap-in-block(RakuAST::Node:D $ast) {
         )
       ),
       body      => RakuAST::Blockoid.new(
-        RakuAST::StatementList.new(
-          RakuAST::Statement::Expression.new(
-            expression => $ast
-          )
-        )
+        $ast ~~ RakuAST::StatementList
+          ?? $ast
+          !! RakuAST::StatementList.new(
+               RakuAST::Statement::Expression.new(
+                 expression => $ast
+               )
+             )
       )
     )
 }
