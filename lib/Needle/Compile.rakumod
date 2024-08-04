@@ -12,7 +12,7 @@ use String::Utils:ver<0.0.24+>:auth<zef:lizmat> <
 
 my constant @ok-types = <
   and auto code contains ends-with equal file json-path not regex
-  split starts-with words
+  split starts-with url words
 >;
 my constant %ok-types = @ok-types.map: * => True;
 
@@ -147,6 +147,11 @@ my &jp = my sub jp-stub(str $pattern) {
 
 #-------------------------------------------------------------------------------
 # Generic helper subs
+
+# Very basic URL fetcher
+my sub GET(Str:D $url) {
+    (run 'curl', '-L', '-k', '-s', '-f', $url, :out).out.slurp || Nil
+}
 
 # Return True if ignorecase should be used
 my sub ignorecase(Str:D $target, %_) {
@@ -322,6 +327,9 @@ my multi sub handle("auto", Str:D $_, %_) {
     elsif .starts-with('s:') {
         handle "split", .substr(2), %_
     }
+    elsif .starts-with('url:') {
+        handle "url", .substr(4), %_
+    }
     else {
         handle "contains", $_, %_
     }
@@ -473,6 +481,18 @@ my multi sub handle("not", Any:D $spec, %_) {
 
 my multi sub handle("split", Str:D $spec, %_) {
     handle $spec.words, %_
+}
+
+my multi sub handle("url", Str:D $spec, %nameds) {
+    my $url := $spec.contains(/^ \w+ '://' /)
+      ?? $spec
+      !! "https://$spec";
+    if GET($url) -> $patterns {
+        handle $patterns.lines, %nameds
+    }
+    else {
+        fail "Could not fetch patterns from '$spec'";
+    }
 }
 
 # Huh?

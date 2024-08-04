@@ -171,11 +171,11 @@ my &exactmark = compile-needle("bår", :smartcase);
 If the needle is a string and does B<not> contain any characters with accents,
 then C<ignoremark> semantics will be assumed.
 
-=head2 Types of matches
+=head2 Types of matchers
 
 =head3 auto
 
-This is the default type of match.  It looks at the given string for a
+This is the default type of matcher.  It looks at the given string for a
 number of markers, and adjust the type of match and the string accordingly.
 The following markers are recognized:
 
@@ -280,6 +280,19 @@ my &needle = compile-needle('s:foo &bar');
 
 Splits the given string (without the C<s:> prefix) on whitespace and
 interpretes the result as a list of needles  (see: type is "split").
+
+=head4 starts with url:
+
+=begin code :lang<raku>
+
+# accept if any of the needles at given URL matches
+my &domain = compile-needle('url:raku.org/robots.txt');  # assumes https://
+my &url    = compile-needle('url:https://raku.org/robots.txt');
+
+=end code
+
+Interpretes the given string (without the C<url:> prefix) as a URL
+from which to obtain the needles from (see: type is "url").
 
 =head4 ends with $
 
@@ -502,6 +515,21 @@ my &needle = compile-needle("starts-with" => "bar");
 =end code
 
 Assumes the string is a needle in a call to C<.starts-with>.
+
+=head3 url
+
+=begin code :lang<raku>
+
+# accept if any of the needles at given URL matches
+my &domain = compile-needle('url:raku.org/robots.txt');  # assumes https://
+my &url    = compile-needle('url:https://raku.org/robots.txt');
+
+=end code
+
+Interpretes the given string (without the C<url:> prefix) as a URL
+from which to obtain the needles from.
+
+Assumes C<https://> if no protocol is specified.
 
 =head3 words
 

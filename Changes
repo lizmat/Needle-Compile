@@ -1,6 +1,8 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
+    - Add support for the "url:" prefix and "url" type, to fetch
+      needles from a remote URL
     - Add StrType.ACCEPTS method for checking whether a given type
       string is valid or not
 

@@ -134,12 +134,12 @@ my &exactmark = compile-needle("bår", :smartcase);
 
 If the needle is a string and does **not** contain any characters with accents, then `ignoremark` semantics will be assumed.
 
-Types of matches
-----------------
+Types of matchers
+-----------------
 
 ### auto
 
-This is the default type of match. It looks at the given string for a number of markers, and adjust the type of match and the string accordingly. The following markers are recognized:
+This is the default type of matcher. It looks at the given string for a number of markers, and adjust the type of match and the string accordingly. The following markers are recognized:
 
 #### starts with !
 
@@ -215,6 +215,16 @@ my &needle = compile-needle('s:foo &bar');
 ```
 
 Splits the given string (without the `s:` prefix) on whitespace and interpretes the result as a list of needles (see: type is "split").
+
+#### starts with url:
+
+```raku
+# accept if any of the needles at given URL matches
+my &domain = compile-needle('url:raku.org/robots.txt');  # assumes https://
+my &url    = compile-needle('url:https://raku.org/robots.txt');
+```
+
+Interpretes the given string (without the `url:` prefix) as a URL from which to obtain the needles from (see: type is "url").
 
 #### ends with $
 
@@ -384,6 +394,18 @@ my &needle = compile-needle("starts-with" => "bar");
 ```
 
 Assumes the string is a needle in a call to `.starts-with`.
+
+### url
+
+```raku
+# accept if any of the needles at given URL matches
+my &domain = compile-needle('url:raku.org/robots.txt');  # assumes https://
+my &url    = compile-needle('url:https://raku.org/robots.txt');
+```
+
+Interpretes the given string (without the `url:` prefix) as a URL from which to obtain the needles from.
+
+Assumes `https://` if no protocol is specified.
 
 ### words
 
