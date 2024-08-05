@@ -19,6 +19,10 @@ say capitals-ok("foo bar baz");             # True
 say capitals-ok("FOO BAR BAZ");             # True
 say capitals-ok("Huey, Dewey, and Louie");  # False
 
+my &regex-ok = compile-needle("regex" => '\w+');
+say regex-ok("foo");  # True
+say regex-ok(":;+");  # False
+
 =end code
 
 =head1 DESCRIPTION
@@ -597,8 +601,35 @@ my &needle = compile-needle({ jp('auth')[0,2] });
 Furthermore, you can use postcircumfix C<[ ]> on the C<JP> object to
 select values from the result.
 
-=head1 AUTHOR
+=head1 HELPER SUBROUTINES
 
+=head2 implicit2explicit
+
+=begin code :lang<raku>
+
+use Needle::Compile "implicit2explicit";
+
+dd implicit2explicit('foo');    # :contains("foo")
+dd implicit2explicit('§bar');   # :words("bar")
+dd implicit2explicit('!baz$');  # :not(:ends-with("baz"))
+
+=end code
+
+The C<implicit2explicit> subroutine converts an implicit query specification
+into an explicit one (expressed as a C<Pair> with the key as the type, and
+the value as the actual string for which to create a needle).
+
+=head1 THEORY OF OPERATION
+
+This module uses the new C<RakuAST> classes as much as possible to create
+an executable C<Callable>.  This means that until RakuAST supports the
+complete Raku Programming Language features, it B<is> possible that some
+code will not actually produce a C<Callable> needle.
+
+There is not a lot of documentation about RakuAST yet, but there are some
+blog posts, e.g. L<RakuAST for early adopters|https://dev.to/lizmat/rakuast-for-early-adopters-576n>.
+
+=head1 AUTHOR
 Elizabeth Mattijsen <liz@raku.rocks>
 
 Source can be located at: https://github.com/lizmat/Needle-Compile .

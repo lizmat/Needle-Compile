@@ -7,7 +7,7 @@
   ],
   "depends": [
     "has-word:ver<0.0.4+>:auth<zef:lizmat>",
-    "String::Utils:ver<0.0.24+>:auth<zef:lizmat>"
+    "String::Utils:ver<0.0.25+>:auth<zef:lizmat>"
   ],
   "description": "Compile a search needle specification",
   "license": "Artistic-2.0",

@@ -3,7 +3,7 @@
 use v6.*;  # Until 6.e is default
 
 use has-word:ver<0.0.4+>:auth<zef:lizmat>;      # has-word
-use String::Utils:ver<0.0.24+>:auth<zef:lizmat> <
+use String::Utils:ver<0.0.25+>:auth<zef:lizmat> <
   has-marks is-lowercase is-whitespace non-word nomark
 >;
 
@@ -238,6 +238,56 @@ my sub prefix-not(RakuAST::Node:D $ast) {
 }
 
 #-------------------------------------------------------------------------------
+# Convert a given string to a type / value pair
+
+my sub implicit2explicit(Str:D $_) {
+    if .starts-with('!') {
+        "not" => implicit2explicit(.substr(1))
+    }
+    elsif .starts-with('&') {
+        "and" => implicit2explicit(.substr(1))
+    }
+    elsif .starts-with('§') {
+        "words" => .substr(1)
+    }
+    elsif .starts-with('*') {
+        "code" => '$_' ~ .substr(1)
+    }
+    elsif .starts-with('{') && .ends-with('}') {
+        "code" => .substr(1, *-1)
+    }
+    elsif .starts-with('/') && .ends-with('/') {
+        "regex" => .substr(1, *-1)
+    }
+    elsif .starts-with('^') {
+        if .ends-with('$') {
+            "equal" => .substr(1, *-1)
+        }
+        else {
+            "starts-with" => .substr(1)
+        }
+    }
+    elsif .ends-with('$') {
+        "ends-with" => .chop
+    }
+    elsif .starts-with('file:') {
+        "file" => .substr(5)
+    }
+    elsif .starts-with('jp:') {
+        "json-path" => .substr(3)
+    }
+    elsif .starts-with('s:') {
+        "split" => .substr(2)
+    }
+    elsif .starts-with('url:') {
+        "url" => .substr(4)
+    }
+    else {
+        "contains" => $_
+    }
+}
+
+#-------------------------------------------------------------------------------
 # Handling of entries.  A single "handle" sub uses multi dispatch to handle
 # all possible specifications, often dispatching to other candidates, and
 # often recursively, to finally return an AST that can be called with the
@@ -283,58 +333,12 @@ my multi sub handle(Str:D $_, %nameds) {
     }
 }
 
-#-------------------------------------------------------------------------------
-# The "auto" distributors
-
 my multi sub handle("auto", Pair:D $_, %_) {
     handle $_, %_
 }
 
 my multi sub handle("auto", Str:D $_, %_) {
-    if .starts-with('!') {
-        handle "not", .substr(1), %_
-    }
-    elsif .starts-with('&') {
-        handle "and", .substr(1), %_
-    }
-    elsif .starts-with('§') {
-        handle "words", .substr(1), %_
-    }
-    elsif .starts-with('*') {
-        handle "code", '$_' ~ .substr(1), %()
-    }
-    elsif .starts-with('{') && .ends-with('}') {
-        handle "code", .substr(1, *-1), %_
-    }
-    elsif .starts-with('/') && .ends-with('/') {
-        handle "regex", .substr(1, *-1), %_
-    }
-    elsif .starts-with('^') {
-        if .ends-with('$') {
-            handle "equal", .substr(1, *-1), %_
-        }
-        else {
-            handle "starts-with", .substr(1), %_
-        }
-    }
-    elsif .ends-with('$') {
-        handle "ends-with", .chop, %_
-    }
-    elsif .starts-with('file:') {
-        handle "file", .substr(5), %_
-    }
-    elsif .starts-with('jp:') {
-        handle "json-path", .substr(3), %_
-    }
-    elsif .starts-with('s:') {
-        handle "split", .substr(2), %_
-    }
-    elsif .starts-with('url:') {
-        handle "url", .substr(4), %_
-    }
-    else {
-        handle "contains", $_, %_
-    }
+    handle implicit2explicit($_), %_
 }
 
 #-------------------------------------------------------------------------------
@@ -563,16 +567,22 @@ my sub EXPORT(*@names) {
     my %export;
     %export<&compile-needle> := &compile-needle;
 
+    my @huh;
     for @names {
-         if $_ eq 'Type' {
-             %export<Type> := Type;
-         }
-         elsif $_ eq 'StrType' {
-             %export<StrType> := StrType;
-         }
+        unless $_ eq 'compile-needle' {
+            $_ eq 'implicit2explicit'
+              ?? (%export<&implicit2explicit> := &implicit2explicit)
+              !! $_ eq 'Type'
+                ?? (%export<Type> := Type)
+                !! $_ eq 'StrType'
+                  ?? (%export<StrType> := StrType)
+                  !! @huh.push($_);
+        }
     }
 
-    %export.Map
+    @huh
+      ?? die "Don't know how to export: @huh.join(", ")"
+      !! %export.Map
 }
 
 # vim: expandtab shiftwidth=4

@@ -1,6 +1,10 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
+    - Add optional subroutine export "implicit2explicit", which
+      converts an implicit query specification into an explicit
+      type => query pair
+    - Up dependency on String::Utils (because we can)
     - Add support for reading patterns from STDIN with the "-" as
       filename
 

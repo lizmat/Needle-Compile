@@ -1,17 +1,35 @@
 BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 use Test;
-use Needle::Compile <compile-needle Type StrType>;
+use Needle::Compile <compile-needle implicit2explicit Type StrType>;
 
 my constant @ok-types = <
   and auto code contains ends-with equal file json-path not regex
   split starts-with words
 >;
 
-plan 7 + @ok-types;
+my @impl2expl =
+  'foo',      "contains"    => "foo",
+  '§foo',     "words"       => "foo",
+  '^foo',     "starts-with" => "foo",
+  'foo$',     "ends-with"   => "foo",
+  '^foo$',    "equal"       => "foo",
+  'url:foo',  "url"         => 'foo',
+  'file:foo', "file"        => 'foo',
+  's:foo',    "split"       => 'foo',
+  'jp:foo',   "json-path"   => 'foo',
+  '*.foo',    "code"        => '$_.foo',
+  '{.foo}',   "code"        => '.foo',
+  '/foo/',    "regex"       => 'foo',
+  '!foo',     "not"         => "contains" => "foo",
+  '&foo',     "and"         => "contains" => "foo",
+;
 
-ok MY::<&compile-needle>, 'did compile-needle get exported';
-ok MY::<Type>:exists,     'did Type get exported';
-ok MY::<StrType>:exists,  'did StrType get exported';
+plan 8 + @ok-types + (@impl2expl / 2);
+
+ok MY::<&compile-needle>,    'did compile-needle get exported';
+ok MY::<&implicit2explicit>, 'did implicit2explicit get exported';
+ok MY::<Type>:exists,        'did Type get exported';
+ok MY::<StrType>:exists,     'did StrType get exported';
 
  ok "foo" but Type<words> ~~ Str,     "it's a string";
  ok "foo" but Type<words> ~~ StrType, "it's a butted string";
@@ -20,6 +38,11 @@ nok "foo"                 ~~ StrType, "not a butted string";
 is-deeply StrType.ACCEPTS("foo"), False, "is 'foo' *NOT* acceptable";
 for @ok-types {
     is-deeply StrType.ACCEPTS($_), True, "is '$_' acceptable";
+}
+
+for @impl2expl -> $implicit, $explicit {
+    is-deeply implicit2explicit($implicit), $explicit,
+      "did '$implicit' produce the correct explicit?";
 }
 
 # vim: expandtab shiftwidth=4
