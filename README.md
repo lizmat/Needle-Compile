@@ -295,6 +295,26 @@ Assumes the string is an expression and attempts to produce that code, with the 
 
 To facilitate the use of libraries that wish to access that topic, it is also available as the `$*_` dynamic variable.
 
+Furthermore, the "code" type also accepts two named arguments:
+
+#### :repo
+
+```raku
+# look for modules in "lib" subdirectory as well
+my &needle = compile-needle("code" => '.uc', :repo<lib>);
+```
+
+Specifies location(s) in which loadable modules should be searched. It is the equivalent of Raku's `-I` command line option, and the `use lib` pragma.
+
+#### :module
+
+```raku
+# Load the "Test" module
+my &needle = compile-needle("code" => 'is $_, 42', :module<Test>);
+```
+
+Specifies module(s) that should be loaded. It is the equivalent of Raku's `-M` command line option, and the `use` statement.
+
 ### contains
 
 ```raku

@@ -3,11 +3,13 @@ BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 use Test;
 use Needle::Compile <compile-needle Type>;
 
-plan 9;
+plan 10;
 
 code '.subst("foo", "bar")', "foo", "bar", 'simple .subst';
 code '.uc',                  "foo", "FOO", 'simple .uc';
 code '$*_ eq $_',            "foo", True,  'check availability of $*_';
+
+code 'is $_, 42', 42, True, 'check loading of Test module', :module<Test>;
 
 run-nameds &contains, "foo", "foo", "bar", "find simple 'foo'";
 
@@ -47,7 +49,7 @@ my sub run-nameds(&code, |c) is test-assertion {
 
 #- code ------------------------------------------------------------------------
 # All tests for code that aren't tested elsewhere
-my sub code($target, $source, $result, $comment) is test-assertion {
+my sub code($target, $source, $result, $comment, *%_) is test-assertion {
     subtest "code: $comment" => {
         my @targets =
           $target but Type("code"),
@@ -56,11 +58,10 @@ my sub code($target, $source, $result, $comment) is test-assertion {
         ;
         @targets.push("*$target") if $target.starts-with(".");
 
-        plan 2 * @targets;
+        plan (2 + ?%_) * @targets;
 
         for @targets {
-            my $needle := needle($_, %());
-
+            my $needle := needle($_, %_);
             is-deeply $needle($source), $result, "'$source' transformed ok";
         }
     }

@@ -388,6 +388,33 @@ with the haystack being presented as the topic (C<$_>).
 To facilitate the use of libraries that wish to access that topic, it
 is also available as the C<$*_> dynamic variable.
 
+Furthermore, the "code" type also accepts two named arguments:
+
+=head4 :repo
+
+=begin code :lang<raku>
+
+# look for modules in "lib" subdirectory as well
+my &needle = compile-needle("code" => '.uc', :repo<lib>);
+
+=end code
+
+Specifies location(s) in which loadable modules should be searched.  It
+is the equivalent of Raku's C<-I> command line option, and the C<use lib>
+pragma.
+
+=head4 :module
+
+=begin code :lang<raku>
+
+# Load the "Test" module
+my &needle = compile-needle("code" => 'is $_, 42', :module<Test>);
+
+=end code
+
+Specifies module(s) that should be loaded.  It is the equivalent of Raku's
+C<-M> command line option, and the C<use> statement.
+
 =head3 contains
 
 =begin code :lang<raku>

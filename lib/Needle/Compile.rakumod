@@ -203,8 +203,40 @@ my multi sub make-method(
     )
 }
 
+# Use dispatch to handle different types of AST
+my proto sub wrap-in-block(|) {*}
+
+# Wrap the statement list in a compunit into a block, and wrap that
+# in a new statement list in the compunit
+my multi sub wrap-in-block(RakuAST::CompUnit:D $ast) {
+
+    my $statement-list := $ast.statement-list;
+    $ast.replace-statement-list(
+      RakuAST::StatementList.new(
+        RakuAST::Statement::Expression.new(
+#          expression => RakuAST::Block.new(
+#            :required-topic,
+          expression => RakuAST::PointyBlock.new(
+            signature => RakuAST::Signature.new(
+              parameters => (
+                RakuAST::Parameter.new(
+                  target => RakuAST::ParameterTarget::Var.new(
+                    name => "\$_"
+                  )
+                ),
+              )
+            ),
+            body      => RakuAST::Blockoid.new($statement-list)
+          )
+        )
+      )
+    );
+    $ast
+}
+
 # Wrap a given AST in a block with $_ as the only positional argument
-my sub wrap-in-block(RakuAST::Node:D $ast) {
+my multi sub wrap-in-block(RakuAST::Node:D $ast) {
+
 #    RakuAST::Block.new(
 #      :required-topic,
     RakuAST::PointyBlock.new(
@@ -256,7 +288,7 @@ my sub implicit2explicit(Str:D $_) {
     elsif .starts-with('{') && .ends-with('}') {
         "code" => .substr(1, *-1)
     }
-    elsif .starts-with('/') && .ends-with('/') {
+    elsif .starts-with('/') && .ends-with('/') && .chars > 2 {
         "regex" => .substr(1, *-1)
     }
     elsif .starts-with('^') {
@@ -344,11 +376,19 @@ my multi sub handle("auto", Str:D $_, %_) {
 #-------------------------------------------------------------------------------
 # Handlers that build custom ASTs
 
-my multi sub handle("code", Str:D $spec, %_) {
-    my $ast := $spec.AST;
+my multi sub handle("code", Str:D $spec is copy, %_) {
 
-    # prefix: my $*_ := $_
-    $ast.unshift-statement(
+    if %_<repo> -> *@repos {
+        $spec = @repos.map({ "use lib '$_';\n" }).join ~ $spec;
+    }
+
+    if %_<module> -> *@modules {
+        $spec = @modules.map({ "use $_;\n" }).join ~ $spec;
+    }
+    my $ast := $spec.AST(:compunit);
+
+    # Prefix: my $*_ := $_
+    $ast.statement-list.unshift-statement(
       RakuAST::Statement::Expression.new(
         expression => RakuAST::VarDeclaration::Simple.new(
           sigil       => "\$",
@@ -489,8 +529,8 @@ my multi sub handle("and", Any:D $spec, %_) {
 
 my multi sub handle("not", Any:D $spec, %_) {
     my $ast := handle $spec, %_;
-    if $ast ~~ RakuAST::StatementList {
-        my $last := $ast.statements.tail;
+    if $ast ~~ RakuAST::CompUnit {
+        my $last := $ast.statement-list.statements.tail;
         $last.set-expression(prefix-not $last.expression);
         $ast
     }
@@ -551,7 +591,7 @@ my multi sub compile-needle(Positional:D $spec is raw, *%_) {
 }
 
 my multi sub compile-needle($spec, *%_) {
-#say handle $spec, %_;
+#say wrap-in-block(handle $spec, %_);
     wrap-in-block(handle $spec, %_).EVAL
 }
 

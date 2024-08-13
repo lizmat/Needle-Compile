@@ -1,6 +1,11 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
+
+0.0.5  2024-08-13T16:44:51+02:00
+    - Add support for :repo and :module named arguments for the
+      "code" type, to set up repos to search and modules to load
+      (similar to -I and -M command line arguments respecively)
     - Add optional subroutine export "implicit2explicit", which
       converts an implicit query specification into an explicit
       type => query pair
