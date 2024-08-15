@@ -17,7 +17,7 @@ my @impl2expl =
   'file:foo', "file"        => 'foo',
   's:foo',    "split"       => 'foo',
   'jp:foo',   "json-path"   => 'foo',
-  '*.foo',    "code"        => '$_.foo',
+  '*.foo',    "code"        => '.foo',
   '{.foo}',   "code"        => '.foo',
   '/foo/',    "regex"       => 'foo',
   '!foo',     "not"         => "contains" => "foo",

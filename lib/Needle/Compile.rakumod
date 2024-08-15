@@ -2,7 +2,7 @@
 
 use v6.*;  # Until 6.e is default
 
-use has-word:ver<0.0.4+>:auth<zef:lizmat>;      # has-word
+use has-word:ver<0.0.6+>:auth<zef:lizmat>;      # has-word all-words
 use String::Utils:ver<0.0.25+>:auth<zef:lizmat> <
   has-marks is-lowercase is-whitespace non-word nomark
 >;
@@ -179,26 +179,47 @@ my multi sub make-method(
       RakuAST::StrLiteral.new($needle),
       %(
         ignorecase => ignorecase($needle, %_),
-        ignoremark => ignoremark($needle, %_)
+        ignoremark => ignoremark($needle, %_),
+        (:matches if %_<matches>),
+        (:global  if %_<globals>)
       )
 }
 
 # Make a method call with the given name and argument AST
 my multi sub make-method(
-            Str:D $name,
-  RakuAST::Node:D $needle,
-                  %_
+            Str:D  $name,
+  RakuAST::Node:D  $needle,
+                   %_,
 ) {
     my $args := RakuAST::ArgList.new($needle);
 
-    for <ignorecase ignoremark> {
+    for <ignorecase ignoremark global> {
         $args.push(RakuAST::ColonPair::True.new($_)) if %_{$_};
     }
 
-    RakuAST::Term::TopicCall.new(
+    my $ast := RakuAST::Term::TopicCall.new(
       RakuAST::Call::Method.new(
         name => RakuAST::Name.from-identifier($name),
         args => $args
+      )
+    );
+
+    %_<matches> ?? with-matches($ast, $needle) !! $ast
+}
+
+# Basically do needle && value for matches only semantics
+my sub with-matches(RakuAST::Node:D $left, RakuAST::Node:D $matches) {
+    RakuAST::ApplyInfix.new(
+      left  => $left,
+      infix => RakuAST::Infix.new('&&'),
+      right => RakuAST::ApplyPostfix.new(
+        operand => RakuAST::Type::Simple.new(
+          RakuAST::Name.from-identifier("Slip")
+        ),
+        postfix => RakuAST::Call::Method.new(
+          name => RakuAST::Name.from-identifier("new"),
+          args => RakuAST::ArgList.new($matches)
+        )
       )
     )
 }
@@ -272,7 +293,22 @@ my sub prefix-not(RakuAST::Node:D $ast) {
 #-------------------------------------------------------------------------------
 # Convert a given string to a type / value pair
 
-my sub implicit2explicit(Str:D $_) {
+my proto sub implicit2explicit(|) {*}
+
+# Already explicit
+my multi sub implicit2explicit(Pair:D $_) {
+    %ok-types{.key}
+      ?? $_
+      !! fail "Don't know how to handler '$_.key()'"
+}
+
+# Mixed in type, take it out
+my multi sub implicit2explicit(StrType:D $_) {
+    .type => "" ~ $_
+}
+
+# Non-mixed in type, look what makes sense
+my multi sub implicit2explicit(Str:D $_) {
     if .starts-with('!') {
         "not" => implicit2explicit(.substr(1))
     }
@@ -283,13 +319,19 @@ my sub implicit2explicit(Str:D $_) {
         "words" => .substr(1)
     }
     elsif .starts-with('*') {
-        "code" => '$_' ~ .substr(1)
+        .chars > 1
+          ?? .substr-eq('.', 1)
+            ?? :code(.substr(1))
+            !! :code('$_ ' ~ .substr(1))
+          !! :contains($_)
     }
     elsif .starts-with('{') && .ends-with('}') {
         "code" => .substr(1, *-1)
     }
-    elsif .starts-with('/') && .ends-with('/') && .chars > 2 {
-        "regex" => .substr(1, *-1)
+    elsif .starts-with('/') && .ends-with('/') {
+        .chars > 2
+          ?? :regex(.substr(1, *-1))
+          !! :contains($_)
     }
     elsif .starts-with('^') {
         if .ends-with('$') {
@@ -328,12 +370,11 @@ my sub implicit2explicit(Str:D $_) {
 my proto sub handle(|) {*}
 
 # Initial distribution
-my multi sub handle(@_, %_) {
-    my $type :=  @_.head.?type // "auto";
-    my $ast := handle $type, @_.head, %_;
+my multi sub handle(@targets, %_, :$type = @targets.head.?type // "auto") {
+    my $ast := handle $type, @targets.head, %_;
 
     # All but the first element
-    for @_.skip {
+    for @targets.skip {
         my $right := handle $_, %_;
 
         $ast := RakuAST::ApplyInfix.new(
@@ -349,7 +390,10 @@ my multi sub handle(@_, %_) {
 }
 
 my multi sub handle(Pair:D $_, %_) {
-    handle .key, .value, %_
+    my $target := .value<>;
+    $target ~~ List
+      ?? handle $target, :type(.key), %_
+      !! handle .key, .value, %_
 }
 
 my multi sub handle(StrType:D $_, %_) {
@@ -435,31 +479,34 @@ my multi sub handle("json-path", Str:D $spec, %_) {
 }
 
 my multi sub handle("equal", Str:D $spec, %_) {
-    my $left  := $spec;
-    my $right := RakuAST::Var::Lexical.new('$_');
+    my $left  = RakuAST::Var::Lexical.new('$_');
+    my $right = $spec;
 
-    if ignorecase($spec, %_) {
-        $left  := $spec.fc;
-        $right := RakuAST::Term::TopicCall.new(
+    if ignoremark($right, %_) {
+        $left  = RakuAST::Call::Name.new(
+          name => RakuAST::Name.from-identifier("nomark"),
+          args => RakuAST::ArgList.new($left)
+        );
+        $right = nomark($right);
+    }
+
+    if ignorecase($right, %_) {
+        $left  = RakuAST::Term::TopicCall.new(
           RakuAST::Call::Method.new(
             name => RakuAST::Name.from-identifier("fc")
           )
         );
+        $right = $right.fc;
     }
 
-    if ignoremark($spec, %_) {
-        $left  := nomark($spec);
-        $right := RakuAST::Call::Name.new(
-          name => RakuAST::Name.from-identifier("nomark"),
-          args => RakuAST::ArgList.new($right)
-        )
-    }
-
-    RakuAST::ApplyInfix.new(
-      left  => RakuAST::StrLiteral.new($left),
+    $right = RakuAST::StrLiteral.new($right);
+    my $ast := RakuAST::ApplyInfix.new(
+      left  => $left,
       infix => RakuAST::Infix.new("eq"),
       right => $right
-    )
+    );
+
+    %_<matches> ?? with-matches($ast, $right) !! $ast
 }
 
 my multi sub handle("file", Str:D $spec, %_) {
@@ -484,40 +531,97 @@ my multi sub handle("file", Str:D $spec, %_) {
     }
 }
 
-my multi sub handle("regex", Str:D $spec, %_) {
-    if non-word($spec) {
+my multi sub handle("regex", Str:D $spec is copy, %_) {
+    $spec .= trim;
+    my $matches := %_<matches>;
+
+    if $matches || non-word($spec) {
         my str $i = ignorecase($spec, %_) ?? ' :i' !! '';
         my str $m = ignoremark($spec, %_) ?? ' :m' !! '';
-        my $ast := "/$i$m $spec /".AST.statements.head.expression;
-        make-method("contains", $ast, %())
+        my $ast   = "/$i$m $spec /".AST.statements.head.expression;
+
+        if $matches {
+
+            # effectively: .match($spec, :g) ?? $/.map({.Str}).Slip !! False
+            RakuAST::Ternary.new(
+              condition => make-method("match", $ast, %(:global)),
+              then      => RakuAST::ApplyPostfix.new(
+                operand => RakuAST::ApplyPostfix.new(
+                  operand => RakuAST::Var::Lexical.new("\$/"),
+                  postfix => RakuAST::Call::Method.new(
+                    name => RakuAST::Name.from-identifier("map"),
+                    args => RakuAST::ArgList.new(wrap-in-block(
+                      RakuAST::Term::TopicCall.new(
+                        RakuAST::Call::Method.new(
+                          name => RakuAST::Name.from-identifier("Str")
+                        )
+                      )
+                     ))
+                  )
+                ),
+                postfix => RakuAST::Call::Method.new(
+                  name => RakuAST::Name.from-identifier("Slip")
+                )
+              ),
+              else      => RakuAST::Term::Name.new(
+                RakuAST::Name.from-identifier("False")
+              )
+            )
+        }
+        else {
+            make-method("contains", $ast, %())
+        }
     }
     else {
         handle("contains", $spec, %_)
     }
 }
 
+my multi sub handle("words", Str:D $spec, %_) {
+    fail("Cannot use word semantics on '$spec'") if non-word($spec);
+
+    my $args := RakuAST::ArgList.new(
+      RakuAST::Var::Lexical.new('$_'),
+      RakuAST::StrLiteral.new($spec)
+    );
+    for <ignorecase ignoremark> {
+        $args.push(RakuAST::ColonPair::True.new($_)) if %_{$_};
+    }
+
+    %_<matches>
+      ?? RakuAST::ApplyInfix.new(
+           left  => RakuAST::Call::Name.new(
+             name => RakuAST::Name.from-identifier("all-words"),
+             args => $args
+           ),
+           infix => RakuAST::Infix.new("||"),
+           right => RakuAST::Term::Name.new(
+             RakuAST::Name.from-identifier("False")
+           )
+         )
+      !! RakuAST::Call::Name.new(
+           name => RakuAST::Name.from-identifier("has-word"),
+           args => $args
+         )
+}
+
 #-------------------------------------------------------------------------------
 # Handlers that do a method call on the topic
 
 my multi sub handle("contains", Str:D $spec, %_) {
-    make-method "contains", $spec, %_
+    %_<matches>
+      ?? handle "regex", "'$spec'", %_
+      !! make-method "contains", $spec, %_
 }
 my multi sub handle("ends-with", Str:D $spec, %_) {
-    make-method "ends-with", $spec, %_
+    %_<matches>
+      ?? handle "regex", "'$spec'\$", %_
+      !! make-method "ends-with", $spec, %_
 }
 my multi sub handle("starts-with", Str:D $spec, %_) {
-    make-method "starts-with", $spec, %_
-}
-my multi sub handle("words", Str:D $spec, %_) {
-    non-word($spec)
-      ?? fail("Cannot use word semantics on '$spec'")
-      !! RakuAST::Call::Name.new(
-           name => RakuAST::Name.from-identifier("has-word"),
-           args => RakuAST::ArgList.new(
-             RakuAST::Var::Lexical.new('$_'),
-             RakuAST::StrLiteral.new($spec),
-           )
-         )
+    %_<matches>
+      ?? handle "regex", "^'$spec'", %_
+      !! make-method "starts-with", $spec, %_
 }
 
 #-------------------------------------------------------------------------------
@@ -569,12 +673,15 @@ my multi sub handle(Str:D $type, Any:D $spec, %_) {
 #-------------------------------------------------------------------------------
 # The frontend
 
-my proto sub compile-needle(|) {*}
+my proto sub compile-needle(|) {
+    CATCH { return .Failure }
+    {*}
+}
 
 my multi sub compile-needle(*%_) {
     if %_ {
         if %_ == 1 {
-            wrap-in-block(handle %_.head).EVAL
+            wrap-in-block(handle %_.head, %_).EVAL
         }
         else {
             fail "Can only specify one pair as a named argument";

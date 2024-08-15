@@ -2,6 +2,20 @@ Revision history for Needle::Compile
 
 {{$NEXT}}
 
+0.0.6  2024-08-15T22:43:27+02:00
+    - Add support for :matches named argument: instead of producing
+      a Bool for many types, it will produce a Slip of matches if
+      there was an match, and False if there weren't 
+    - Up dependency on "has-word" for the "all-words" subroutine
+    - Make "implicit2explicit" also accept already explicit specifications
+    - Catch any compilation errors: return a Failure with the
+      original compilation error
+    - Make sure that '*' and '//' are correctly handled as searches
+      for exactly those characters
+    - Trim leading and trailing whitespace from regex specification,
+      as they are without meaning.  This should make it easier to
+      follow the fast path of alphanumerics only, e.g. / foo /
+
 0.0.5  2024-08-13T16:44:51+02:00
     - Add support for :repo and :module named arguments for the
       "code" type, to set up repos to search and modules to load

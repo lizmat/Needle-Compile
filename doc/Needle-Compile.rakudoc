@@ -23,14 +23,17 @@ my &regex-ok = compile-needle("regex" => '\w+');
 say regex-ok("foo");  # True
 say regex-ok(":;+");  # False
 
+my &regex-matches = compile-needle("regex" => '\w+', :matches);
+say regex-matches(":foo:");  # (foo)
+say regex-matches(":;+");    # False
+
 =end code
 
 =head1 DESCRIPTION
 
-Needle::Compile exports a single subroutine "compile-needle" that takes
-a number of arguments that specify a search query needle, and returns a
-C<Callable> that can be called with a given haystack to see if there is
-a match.
+Needle::Compile exports a subroutine "compile-needle" that takes a number
+of arguments that specify a search query needle, and returns a C<Callable>
+that can be called with a given haystack to see if there is a match.
 
 It can as such be used as the argument to the C<rak> subroutine provided
 by the L<C<rak>|https://raku.land/zef:lizmat/rak> distribution.
@@ -118,10 +121,13 @@ say StrType.ACCEPTS("frobnicate");  # False
 
 =head2 Modifiers
 
-Many types of matches support C<ignorecase> and C<ignoremark> semantics.
+Many types of matching support C<ignorecase> and C<ignoremark> semantics.
 These can be specified explicitely (with the C<:ignorecase> and
 C<:ignoremark> named arguments), or implicitely with the C<:smartcase>
 and C<:smartmark> named arguments.
+
+The same types also support the <:match> named argument, to return the
+string that actually matched, rather than C<True>.
 
 =head3 ignorecase
 
@@ -174,6 +180,19 @@ my &exactmark = compile-needle("bår", :smartcase);
 
 If the needle is a string and does B<not> contain any characters with accents,
 then C<ignoremark> semantics will be assumed.
+
+=head3 matches
+
+=begin code :lang<raku>
+
+my &regex-matches = compile-needle("regex" => '\w+', :matches);
+say regex-matches(":foo:");  # (foo)
+say regex-matches(":;+");    # False
+
+=end code
+
+Return all the strings that matched as a C<Slip>, rather than C<True>.
+Will still return C<False> if no matches were found.
 
 =head2 Types of matchers
 

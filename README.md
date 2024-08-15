@@ -23,12 +23,16 @@ say capitals-ok("Huey, Dewey, and Louie");  # False
 my &regex-ok = compile-needle("regex" => '\w+');
 say regex-ok("foo");  # True
 say regex-ok(":;+");  # False
+
+my &regex-matches = compile-needle("regex" => '\w+', :matches);
+say regex-matches(":foo:");  # (foo)
+say regex-matches(":;+");    # False
 ```
 
 DESCRIPTION
 ===========
 
-Needle::Compile exports a single subroutine "compile-needle" that takes a number of arguments that specify a search query needle, and returns a `Callable` that can be called with a given haystack to see if there is a match.
+Needle::Compile exports a subroutine "compile-needle" that takes a number of arguments that specify a search query needle, and returns a `Callable` that can be called with a given haystack to see if there is a match.
 
 It can as such be used as the argument to the `rak` subroutine provided by the [`rak`](https://raku.land/zef:lizmat/rak) distribution.
 
@@ -94,7 +98,9 @@ say StrType.ACCEPTS("frobnicate");  # False
 Modifiers
 ---------
 
-Many types of matches support `ignorecase` and `ignoremark` semantics. These can be specified explicitely (with the `:ignorecase` and `:ignoremark` named arguments), or implicitely with the `:smartcase` and `:smartmark` named arguments.
+Many types of matching support `ignorecase` and `ignoremark` semantics. These can be specified explicitely (with the `:ignorecase` and `:ignoremark` named arguments), or implicitely with the `:smartcase` and `:smartmark` named arguments.
+
+The same types also support the <:match> named argument, to return the string that actually matched, rather than `True`.
 
 ### ignorecase
 
@@ -137,6 +143,16 @@ my &exactmark = compile-needle("bår", :smartcase);
 ```
 
 If the needle is a string and does **not** contain any characters with accents, then `ignoremark` semantics will be assumed.
+
+### matches
+
+```raku
+my &regex-matches = compile-needle("regex" => '\w+', :matches);
+say regex-matches(":foo:");  # (foo)
+say regex-matches(":;+");    # False
+```
+
+Return all the strings that matched as a `Slip`, rather than `True`. Will still return `False` if no matches were found.
 
 Types of matchers
 -----------------
