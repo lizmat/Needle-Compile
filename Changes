@@ -2,6 +2,10 @@ Revision history for Needle::Compile
 
 {{$NEXT}}
 
+0.0.7  2024-08-16T17:53:20+02:00
+    - Bump dependency on String::Utils, because we can
+    - Fix some problems in the documentation
+
 0.0.6  2024-08-15T22:43:27+02:00
     - Add support for :matches named argument: instead of producing
       a Bool for many types, it will produce a Slip of matches if

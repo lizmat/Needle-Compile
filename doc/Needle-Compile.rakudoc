@@ -174,7 +174,7 @@ Allow characters to match even if they have accents (or not).
 my &anymark = compile-needle("bar", :smartmark);
 
 # accept haystack if "bår" is found
-my &exactmark = compile-needle("bår", :smartcase);
+my &exactmark = compile-needle("bår", :smartmark);
 
 =end code
 
@@ -599,7 +599,7 @@ with word boundaries on either side of the needle.
 =begin code :lang<raku>
 
 # return result of JSON::Path query "auth"
-my &needle = compile-needle({ jp('auth').Slip });
+my &needle = compile-needle("code" => 'jp("auth").Slip');
 
 =end code
 
@@ -676,6 +676,7 @@ There is not a lot of documentation about RakuAST yet, but there are some
 blog posts, e.g. L<RakuAST for early adopters|https://dev.to/lizmat/rakuast-for-early-adopters-576n>.
 
 =head1 AUTHOR
+
 Elizabeth Mattijsen <liz@raku.rocks>
 
 Source can be located at: https://github.com/lizmat/Needle-Compile .

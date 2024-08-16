@@ -139,7 +139,7 @@ Allow characters to match even if they have accents (or not).
 my &anymark = compile-needle("bar", :smartmark);
 
 # accept haystack if "bår" is found
-my &exactmark = compile-needle("bår", :smartcase);
+my &exactmark = compile-needle("bår", :smartmark);
 ```
 
 If the needle is a string and does **not** contain any characters with accents, then `ignoremark` semantics will be assumed.
@@ -461,7 +461,7 @@ Doing JSON path queries in code needles
 
 ```raku
 # return result of JSON::Path query "auth"
-my &needle = compile-needle({ jp('auth').Slip });
+my &needle = compile-needle("code" => 'jp("auth").Slip');
 ```
 
 The initial call to the `jp` function will attempt to load the `JSON::Path` module, and fail if it cannot. If the load is successful, it will create an object of the (internal) `JP` class with the giveni pattern.
@@ -513,8 +513,10 @@ This module uses the new `RakuAST` classes as much as possible to create an exec
 
 There is not a lot of documentation about RakuAST yet, but there are some blog posts, e.g. [RakuAST for early adopters](https://dev.to/lizmat/rakuast-for-early-adopters-576n).
 
-AUTHOR Elizabeth Mattijsen <liz@raku.rocks>
-===========================================
+AUTHOR
+======
+
+Elizabeth Mattijsen <liz@raku.rocks>
 
 Source can be located at: https://github.com/lizmat/Needle-Compile . Comments and Pull Requests are welcome.
 
