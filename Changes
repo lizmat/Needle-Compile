@@ -2,6 +2,11 @@ Revision history for Needle::Compile
 
 {{$NEXT}}
 
+0.0.8  2024-08-21T16:31:53+02:00
+    - Make sure code blocks and regexes have a lexically visible
+      thread-safe $/ to prevent unexpected results in threaded
+      execution of the code
+
 0.0.7  2024-08-16T17:53:20+02:00
     - Bump dependency on String::Utils, because we can
     - Fix some problems in the documentation
