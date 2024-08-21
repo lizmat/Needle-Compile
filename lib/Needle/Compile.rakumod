@@ -256,7 +256,25 @@ my multi sub wrap-in-block(RakuAST::CompUnit:D $ast) {
 }
 
 # Wrap a given AST in a block with $_ as the only positional argument
-my multi sub wrap-in-block(RakuAST::Node:D $ast) {
+my multi sub wrap-in-block(RakuAST::Node:D $ast is copy) {
+
+    # Make sure we have a statement list
+    $ast = RakuAST::StatementList.new(
+      RakuAST::Statement::Expression.new(
+        expression => $ast
+      )
+    ) unless $ast ~~ RakuAST::StatementList;
+
+    # Make sure we have a lexically visible $/ to stop it potentially
+    # being accessed from multiple threads simultaneously
+    $ast.unshift-statement(
+      RakuAST::Statement::Expression.new(
+        expression => RakuAST::VarDeclaration::Simple.new(
+          sigil       => '$',
+          desigilname => RakuAST::Name.from-identifier('/')
+        )
+      )
+    );
 
 #    RakuAST::Block.new(
 #      :required-topic,
@@ -270,15 +288,7 @@ my multi sub wrap-in-block(RakuAST::Node:D $ast) {
           ),
         )
       ),
-      body      => RakuAST::Blockoid.new(
-        $ast ~~ RakuAST::StatementList
-          ?? $ast
-          !! RakuAST::StatementList.new(
-               RakuAST::Statement::Expression.new(
-                 expression => $ast
-               )
-             )
-      )
+      body      => RakuAST::Blockoid.new($ast)
     )
 }
 
@@ -370,14 +380,45 @@ my multi sub implicit2explicit(Str:D $_) {
 my proto sub handle(|) {*}
 
 # Initial distribution
-my multi sub handle(@targets, %_, :$type = @targets.head.?type // "auto") {
-    my $ast := handle $type, @targets.head, %_;
+my multi sub handle(@raw, %_, :$type = "auto") {
+
+    my @targets;
+    my str @regexes;
+
+    sub collect-any-regexes() {
+        @targets.push(Pair.new('regex', @regexes.splice.join('|')))
+          if @regexes;
+    }
+
+    if $type eq 'auto' {
+        for @raw {
+            my $target := $_ ~~ Pair ?? $_ !! implicit2explicit($_);
+
+            # A(nother) regex
+            if $target.key eq 'regex' {
+                @regexes.push($target.value);
+            }
+
+            # Something else, combine any regexes first
+            else {
+                collect-any-regexes;
+                @targets.push: $target;
+            }
+        }
+
+        collect-any-regexes;
+    }
+    else {
+        @targets = @raw.map: { $_ ~~ Pair ?? $_ !! Pair.new($type, $_) }
+    }
+
+    my $ast = handle @targets.head, %_;
 
     # All but the first element
     for @targets.skip {
         my $right := handle $_, %_;
 
-        $ast := RakuAST::ApplyInfix.new(
+        $ast = RakuAST::ApplyInfix.new(
           left  => $ast,
           infix => RakuAST::Infix.new(
             ($right.?type // "") eq 'and' ?? "&&" !! "||"
@@ -430,16 +471,6 @@ my multi sub handle("code", Str:D $spec is copy, %_) {
         $spec = @modules.map({ "use $_;\n" }).join ~ $spec;
     }
     my $ast := $spec.AST(:compunit);
-
-    # Prefix: my $/
-    $ast.statement-list.unshift-statement(
-      RakuAST::Statement::Expression.new(
-        expression => RakuAST::VarDeclaration::Simple.new(
-          sigil       => '$',
-          desigilname => RakuAST::Name.from-identifier('/')
-        )
-      )
-    );
 
     # Prefix: my $*_ := $_
     $ast.statement-list.unshift-statement(
@@ -548,47 +579,39 @@ my multi sub handle("regex", Str:D $spec is copy, %_) {
     if $matches || non-word($spec) {
         my str $i = ignorecase($spec, %_) ?? ' :i' !! '';
         my str $m = ignoremark($spec, %_) ?? ' :m' !! '';
-        my $ast  := "/$i$m $spec /".AST.statements.head.expression;
+        my $ast   = "/$i$m $spec /".AST.statements.head.expression;
 
-        $ast := $matches
-          # effectively: .match($spec, :g) ?? $/.map({.Str}).Slip !! False
-          ?? RakuAST::Ternary.new(
-               condition => make-method("match", $ast, %(:global)),
-               then      => RakuAST::ApplyPostfix.new(
-                 operand => RakuAST::ApplyPostfix.new(
-                   operand => RakuAST::Var::Lexical.new("\$/"),
-                   postfix => RakuAST::Call::Method.new(
-                     name => RakuAST::Name.from-identifier("map"),
-                     args => RakuAST::ArgList.new(wrap-in-block(
-                       RakuAST::Term::TopicCall.new(
-                         RakuAST::Call::Method.new(
-                           name => RakuAST::Name.from-identifier("Str")
-                         )
-                       )
+        if $matches {
+
+            # effectively: .match($spec, :g) ?? $/.map({.Str}).Slip !! False
+            RakuAST::Ternary.new(
+              condition => make-method("match", $ast, %(:global)),
+              then      => RakuAST::ApplyPostfix.new(
+                operand => RakuAST::ApplyPostfix.new(
+                  operand => RakuAST::Var::Lexical.new("\$/"),
+                  postfix => RakuAST::Call::Method.new(
+                    name => RakuAST::Name.from-identifier("map"),
+                    args => RakuAST::ArgList.new(wrap-in-block(
+                      RakuAST::Term::TopicCall.new(
+                        RakuAST::Call::Method.new(
+                          name => RakuAST::Name.from-identifier("Str")
+                        )
+                      )
                      ))
-                   )
-                 ),
-                 postfix => RakuAST::Call::Method.new(
-                   name => RakuAST::Name.from-identifier("Slip")
-                 )
-               ),
-               else      => RakuAST::Term::Name.new(
-                 RakuAST::Name.from-identifier("False")
-               )
-             )
-          !! make-method("contains", $ast, %());
-
-        # Make sure we have a lexically visible $/ here, otherwise there's
-        # the risk it is shared between threads with unpredictable results
-        RakuAST::StatementList.new(
-          RakuAST::Statement::Expression.new(
-            expression => RakuAST::VarDeclaration::Simple.new(
-              sigil       => '$',
-              desigilname => RakuAST::Name.from-identifier('/'),
+                  )
+                ),
+                postfix => RakuAST::Call::Method.new(
+                  name => RakuAST::Name.from-identifier("Slip")
+                )
+              ),
+              else      => RakuAST::Term::Name.new(
+                RakuAST::Name.from-identifier("False")
+              )
             )
-          ),
-          RakuAST::Statement::Expression.new(expression => $ast)
-        )
+        }
+        else {
+            make-method("contains", $ast, %())
+        }
     }
     else {
         handle("contains", $spec, %_)

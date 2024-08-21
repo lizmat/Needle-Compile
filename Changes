@@ -2,6 +2,14 @@ Revision history for Needle::Compile
 
 {{$NEXT}}
 
+0.0.9  2024-08-21T18:19:10+02:00
+    - Combine multiple consecutive regexes into a single regex
+      for performance
+    - Fix issue with multiple regexes crashing because $/ got
+      defined more than once: fixed by moving adding to the block
+      wrapping logic: having an extra $/ is probably not an issue
+      for the use cases of Needle::Compile
+
 0.0.8  2024-08-21T16:31:53+02:00
     - Make sure code blocks and regexes have a lexically visible
       thread-safe $/ to prevent unexpected results in threaded
