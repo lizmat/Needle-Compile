@@ -24,7 +24,7 @@ my @impl2expl =
   '&foo',     "and"         => "contains" => "foo",
 ;
 
-plan 8 + @ok-types + (@impl2expl / 2);
+plan 9 + @ok-types + (@impl2expl / 2);
 
 ok MY::<&compile-needle>,    'did compile-needle get exported';
 ok MY::<&implicit2explicit>, 'did implicit2explicit get exported';
@@ -44,5 +44,8 @@ for @impl2expl -> $implicit, $explicit {
     is-deeply implicit2explicit($implicit), $explicit,
       "did '$implicit' produce the correct explicit?";
 }
+
+my $ast = compile-needle("bar", :AST);
+is $ast.^name, "RakuAST::PointyBlock", "did we get an AST";
 
 # vim: expandtab shiftwidth=4

@@ -1,6 +1,9 @@
 Revision history for Needle::Compile
 
 {{$NEXT}}
+    - Add support for :AST named argument to "compile-needle"
+      to produce the AST instead of the Callable, for future
+      integration into applications, such as App::Rak
 
 0.0.10  2026-05-25T19:58:30+02:00
     - Fix code for post 6.e behaviour of %_

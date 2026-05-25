@@ -490,6 +490,49 @@ my &needle = compile-needle({ jp('auth')[0,2] });
 
 Furthermore, you can use postcircumfix `[ ]` on the `JP` object to select values from the result.
 
+AST
+===
+
+The `compile-needle` subroutine also accepts an `:AST` named argument. When specified with a true value, it will return the `RakuAST::Node` representation of the `Callable`.
+
+This is intended for debugging and for incorporation into other modules that synthetically build code using `RakuAST`.
+
+```raku
+say compile-needle("bar:, :AST);
+```
+
+    RakuAST::PointyBlock.new(
+      signature => RakuAST::Signature.new(
+        parameters => (
+          RakuAST::Parameter.new(
+            target => RakuAST::ParameterTarget::Var.new(
+              name => "\$_"
+            )
+          ),
+        )
+      ),
+      body      => RakuAST::Blockoid.new(
+        RakuAST::StatementList.new(
+          RakuAST::Statement::Expression.new(
+            expression => RakuAST::VarDeclaration::Simple.new(
+              sigil       => "\$",
+              desigilname => RakuAST::Name.from-identifier("/")
+            )
+          ),
+          RakuAST::Statement::Expression.new(
+            expression => RakuAST::Term::TopicCall.new(
+              RakuAST::Call::Method.new(
+                name => RakuAST::Name.from-identifier("contains"),
+                args => RakuAST::ArgList.new(
+                  RakuAST::StrLiteral.new("bar")
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+
 HELPER SUBROUTINES
 ==================
 

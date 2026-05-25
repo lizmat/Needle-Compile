@@ -559,6 +559,52 @@ my &needle = compile-needle({ jp('auth')[0,2] });
 Furthermore, you can use postcircumfix C<[ ]> on the C<JP> object to
 select values from the result.
 
+=head1 AST
+
+The C<compile-needle> subroutine also accepts an C<:AST> named argument.
+When specified with a true value, it will return the C<RakuAST::Node>
+representation of the C<Callable>.
+
+This is intended for debugging and for incorporation into other modules
+that synthetically build code using C<RakuAST>.
+
+=begin code :lang<raku>
+say compile-needle("bar:, :AST);
+=end code
+=begin output
+RakuAST::PointyBlock.new(
+  signature => RakuAST::Signature.new(
+    parameters => (
+      RakuAST::Parameter.new(
+        target => RakuAST::ParameterTarget::Var.new(
+          name => "\$_"
+        )
+      ),
+    )
+  ),
+  body      => RakuAST::Blockoid.new(
+    RakuAST::StatementList.new(
+      RakuAST::Statement::Expression.new(
+        expression => RakuAST::VarDeclaration::Simple.new(
+          sigil       => "\$",
+          desigilname => RakuAST::Name.from-identifier("/")
+        )
+      ),
+      RakuAST::Statement::Expression.new(
+        expression => RakuAST::Term::TopicCall.new(
+          RakuAST::Call::Method.new(
+            name => RakuAST::Name.from-identifier("contains"),
+            args => RakuAST::ArgList.new(
+              RakuAST::StrLiteral.new("bar")
+            )
+          )
+        )
+      )
+    )
+  )
+)
+=end output
+
 =head1 HELPER SUBROUTINES
 
 =head2 implicit2explicit

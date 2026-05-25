@@ -715,7 +715,7 @@ my multi sub handle(Str:D $type, Any:D $spec, %_) {
 # The frontend
 
 my int $level = %*ENV<NEEDLE_COMPILE_DEBUG> // 0;
-my proto sub compile-needle(|) {
+my proto sub compile-needle(:$AST, |) {
     CATCH { return .Failure }
     my $ast := {*}
 
@@ -725,13 +725,13 @@ my proto sub compile-needle(|) {
         say $ast.DEPARSE;
     }
 
-    $ast.EVAL
+    $AST ?? $ast !! $ast.EVAL
 }
 
 my multi sub compile-needle(*%nameds) {
     if %nameds {
         if %nameds == 1 {
-            wrap-in-block(handle %nameds.head, %nameds).EVAL
+            wrap-in-block(handle %nameds.head, %nameds)
         }
         else {
             fail "Can only specify one pair as a named argument";
