@@ -2,7 +2,7 @@ BEGIN %*ENV<RAKU_TEST_DIE_ON_FAIL> = 1;
 use Test;
 use Needle::Compile "Type";
 
-my $url = 'raku.org/robots.txt';
+my $url = 'sets.ie/robots.txt';
 my @urls =
   "url:$url",
   :$url,
@@ -15,8 +15,8 @@ for @urls {
     my &needle := compile-needle($_);
     isa-ok &needle, Callable, "Testing $_.raku()";
 
-    is-deeply needle("User-Agent: *"), True, 'found target';
-    is-deeply needle("User-Agent:"),  False, 'did NOT find target';
+    is-deeply needle("User-agent: *"), True, 'found target';
+    is-deeply needle("Allow:"),  False, 'did NOT find target';
 }
 
 # vim: expandtab shiftwidth=4

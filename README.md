@@ -513,6 +513,15 @@ This module uses the new `RakuAST` classes as much as possible to create an exec
 
 There is not a lot of documentation about RakuAST yet, but there are some blog posts, e.g. [RakuAST for early adopters](https://dev.to/lizmat/rakuast-for-early-adopters-576n).
 
+DEBUGGING
+=========
+
+The environment variable `NEEDLE_COMPILE_DEBUG` can be specified with 2 values:
+
+  * 1 - show deparsed version of the AST that has been created
+
+  * 2 - also show the actual AST that has been created first
+
 AUTHOR
 ======
 
@@ -525,7 +534,7 @@ If you like this module, or what I’m doing more generally, committing to a [sm
 COPYRIGHT AND LICENSE
 =====================
 
-Copyright 2024 Elizabeth Mattijsen
+Copyright 2024, 2026 Elizabeth Mattijsen
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 

@@ -7,7 +7,6 @@ Needle::Compile - compile a search needle specification
 =head1 SYNOPSIS
 
 =begin code :lang<raku>
-
 use Needle::Compile;
 
 my &basic = compile-needle("bar");
@@ -26,7 +25,6 @@ say regex-ok(":;+");  # False
 my &regex-matches = compile-needle("regex" => '\w+', :matches);
 say regex-matches(":foo:");  # (foo)
 say regex-matches(":;+");    # False
-
 =end code
 
 =head1 DESCRIPTION
@@ -46,10 +44,8 @@ needle can be specified in 3 ways:
 =head3 implicitely
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" as word is found
 my &needle = compile-needle("§bar");
-
 =end code
 
 By using textual markers at the start and end of the given string needle
@@ -58,10 +54,8 @@ By using textual markers at the start and end of the given string needle
 =head3 explicitely
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" as word is found
 my &needle = compile-needle("words" => "bar");
-
 =end code
 
 By specifying a needle as a C<Pair>, with the key being a string describing
@@ -70,12 +64,10 @@ the type.
 =head3 mixed in
 
 =begin code :lang<raku>
-
 use Needle::Compile "Type";
 
 # accept haystack if "bar" as word is found
 my &needle = compile-needle("bar" but Type("words"));
-
 =end code
 
 If the specified needle supports a C<.type> method, then that method will
@@ -89,34 +81,28 @@ restrictive for your application, you can define your own C<Type> role.
 Which can be as simple as:
 
 =begin code :lang<raku>
-
 my role Type { $.type }
-
 =end code
 
 If you want to be able to dispatch on strings that have a C<but Type>
 mixed in, you can also import the C<StrType> class:
 
 =begin code :lang<raku>
-
 use Needle::Compile <Type StrType>;
 
 say "foo" but Type<words> ~~ Str;      # True
 say "foo" but Type<words> ~~ StrType;  # True
 say "foo"                 ~~ StrType;  # False
-
 =end code
 
 Furthermore, you can call the C<.ACCEPTS> method on the C<StrTtype>
 class to check whether a given type string is valid:
 
 =begin code :lang<raku>
-
 use Needle::Compile <Type StrType>;
 
 say StrType.ACCEPTS("contains");    # True
 say StrType.ACCEPTS("frobnicate");  # False
-
 =end code
 
 =head2 Modifiers
@@ -132,10 +118,8 @@ string that actually matched, rather than C<True>.
 =head3 ignorecase
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" is found, regardless of case
 my &needle = compile-needle("bar", :ignorecase);
-
 =end code
 
 Allow characters to match even if they are of mixed case.
@@ -143,13 +127,11 @@ Allow characters to match even if they are of mixed case.
 =head3 smartcase
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" is found, regardless of case
 my &anycase = compile-needle("bar", :smartcase);
 
 # accept haystack if "Bar" is found
 my &exactcase = compile-needle("Bar", :smartcase);
-
 =end code
 
 If the needle is a string and does B<not> contain any uppercase characters,
@@ -158,10 +140,8 @@ then C<ignorecase> semantics will be assumed.
 =head3 ignoremark
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" is found, regardless of any accents
 my &anycase = compile-needle("bar", :ignoremark);
-
 =end code
 
 Allow characters to match even if they have accents (or not).
@@ -169,13 +149,11 @@ Allow characters to match even if they have accents (or not).
 =head3 smartmark
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" is found, regardless of any accents
 my &anymark = compile-needle("bar", :smartmark);
 
 # accept haystack if "bår" is found
 my &exactmark = compile-needle("bår", :smartmark);
-
 =end code
 
 If the needle is a string and does B<not> contain any characters with accents,
@@ -184,11 +162,9 @@ then C<ignoremark> semantics will be assumed.
 =head3 matches
 
 =begin code :lang<raku>
-
 my &regex-matches = compile-needle("regex" => '\w+', :matches);
 say regex-matches(":foo:");  # (foo)
 say regex-matches(":;+");    # False
-
 =end code
 
 Return all the strings that matched as a C<Slip>, rather than C<True>.
@@ -205,10 +181,8 @@ The following markers are recognized:
 =head4 starts with !
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" is NOT found
 my &needle = compile-needle('!bar');
-
 =end code
 
 This is a meta-marker.  Assumes the string given (without the C<!>) should
@@ -217,10 +191,8 @@ be processed, and its result negated (see: type is "not").
 =head4 starts with &
 
 =begin code :lang<raku>
-
 # accept haystack if "foo" and "bar" are found
 my &needle = compile-needle('foo', '&bar');
-
 =end code
 
 This is a meta-marker.  Marks the needle produced for the given string
@@ -230,10 +202,8 @@ be processed, rather than the default C<||> infix (see: type is "and").
 =head4 starts with §
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" is found as a word
 my &needle = compile-needle('§bar');
-
 =end code
 
 Assumes the string given (without the C<§>) should match with
@@ -242,13 +212,11 @@ word-boundary semantics applied (see: type is "words").
 =head4 starts with *
 
 =begin code :lang<raku>
-
 # accept haystack if alphabetically before "bar"
 my &is-before = compile-needle('* before "bar"');
 
 # return every haystack uppercased
 my &uppercased = compile-needle('*.uc');
-
 =end code
 
 Assumes the given string is a valid C<WhateverCode> specification and
@@ -257,10 +225,8 @@ attempts to produce that specification accordingly (see: type is "code").
 =head4 starts with ^
 
 =begin code :lang<raku>
-
 # accept haystack if it starts with "bar"
 my &needle = compile-needle('^bar');
-
 =end code
 
 Assumes the string given (without the C<^>) should match with
@@ -269,10 +235,8 @@ C<.starts-with> semantics applied (see: type is "starts-with").
 =head4 starts with file:
 
 =begin code :lang<raku>
-
 # accept matching patterns in file "always"
 my &needle = compile-needle('file:always');
-
 =end code
 
 Assumes the given string (without the C<file:> prefix) is a valid path
@@ -282,10 +246,8 @@ specification, pointing to a file containing the patterns to be used
 =head4 starts with jp:
 
 =begin code :lang<raku>
-
 # return result of JSON::Path query "auth"
 my &needle = compile-needle('jp:auth');
-
 =end code
 
 Assumes the given string (without the C<jp:> prefix) is a valid
@@ -295,10 +257,8 @@ L<C<JSON Path>|https://en.wikipedia.org/wiki/JSONPath> specification
 =head4 starts with s:
 
 =begin code :lang<raku>
-
 # accept if string contains "foo" *and* "bar"
 my &needle = compile-needle('s:foo &bar');
-
 =end code
 
 Splits the given string (without the C<s:> prefix) on whitespace and
@@ -307,11 +267,9 @@ interpretes the result as a list of needles  (see: type is "split").
 =head4 starts with url:
 
 =begin code :lang<raku>
-
 # accept if any of the needles at given URL matches
 my &domain = compile-needle('url:raku.org/robots.txt');  # assumes https://
 my &url    = compile-needle('url:https://raku.org/robots.txt');
-
 =end code
 
 Interpretes the given string (without the C<url:> prefix) as a URL
@@ -320,10 +278,8 @@ from which to obtain the needles from (see: type is "url").
 =head4 ends with $
 
 =begin code :lang<raku>
-
 # accept haystack if it ends with "bar"
 my &needle = compile-needle('bar$');
-
 =end code
 
 Assumes the string given (without the C<$>) should match with
@@ -332,10 +288,8 @@ C<.ends-with> semantics applied (see: type is "ends-with").
 =head4 starts with ^ and ends with $
 
 =begin code :lang<raku>
-
 # accept haystack if it is equal to "bar"
 my &needle = compile-needle('^bar$');
-
 =end code
 
 Assumes the string given (without the C<^> and C<$>) should match exactly
@@ -344,10 +298,8 @@ Assumes the string given (without the C<^> and C<$>) should match exactly
 =head4 starts with / and ends with /
 
 =begin code :lang<raku>
-
 # accept haystack if it matches "bar" as a regular expression
 my &needle = compile-needle('/bar/');
-
 =end code
 
 Assumes the string given (without the C</>'s) is a regex and attempts
@@ -357,10 +309,8 @@ to produce a C<Regex> object and wraps that in a call to C<.contains>
 =head4 starts with { and ends with }
 
 =begin code :lang<raku>
-
 # return the lowercased, whitespace trimmed haystack
 my &needle = compile-needle('{.trim.lc}');
-
 =end code
 
 Assumes the string given (without the C<{> and C<}>) is an expression
@@ -369,10 +319,8 @@ and attempts to produce the code (see: type is "code").
 =head4 none of the above
 
 =begin code :lang<raku>
-
 # accept haystack if it contains "bar"
 my &needle = compile-needle("bar");
-
 =end code
 
 Assumes the string given should match with C<.contains> semantics
@@ -381,10 +329,8 @@ applied (see: type is "contains").
 =head3 and
 
 =begin code :lang<raku>
-
 # accept haystack if "foo" and "bar" are found
 my &needle = compile-needle('foo', "and" => 'bar');
-
 =end code
 
 This is a meta-marker.  Marks the needle produced for the given string
@@ -395,10 +341,8 @@ needle in a list of needles.
 =head3 code
 
 =begin code :lang<raku>
-
 # return uppercase version of the haystack
 my &needle = compile-needle("code" => ".uc");
-
 =end code
 
 Assumes the string is an expression and attempts to produce that code,
@@ -412,10 +356,8 @@ Furthermore, the "code" type also accepts two named arguments:
 =head4 :repo
 
 =begin code :lang<raku>
-
 # look for modules in "lib" subdirectory as well
 my &needle = compile-needle("code" => '.uc', :repo<lib>);
-
 =end code
 
 Specifies location(s) in which loadable modules should be searched.  It
@@ -425,10 +367,8 @@ pragma.
 =head4 :module
 
 =begin code :lang<raku>
-
 # Load the "Test" module
 my &needle = compile-needle("code" => 'is $_, 42', :module<Test>);
-
 =end code
 
 Specifies module(s) that should be loaded.  It is the equivalent of Raku's
@@ -437,10 +377,8 @@ C<-M> command line option, and the C<use> statement.
 =head3 contains
 
 =begin code :lang<raku>
-
 # accept haystack if it contains "bar"
 my &needle = compile-needle("contains" => "bar");
-
 =end code
 
 Assumes the string is a needle in a call to C<.contains>.
@@ -448,10 +386,8 @@ Assumes the string is a needle in a call to C<.contains>.
 =head3 ends-with
 
 =begin code :lang<raku>
-
 # accept haystack if it ends with "bar"
 my &needle = compile-needle("ends-with" => "bar");
-
 =end code
 
 Assumes the string is a needle in a call to C<.ends-with>.
@@ -459,10 +395,8 @@ Assumes the string is a needle in a call to C<.ends-with>.
 =head3 equal
 
 =begin code :lang<raku>
-
 # accept haystack if it is equal to "bar"
 my &needle = compile-needle("equal" => "bar");
-
 =end code
 
 Assumes the string is a needle to compare with the haystack using infix
@@ -471,10 +405,8 @@ C<eq> semantics.
 =head3 file
 
 =begin code :lang<raku>
-
 # return result of matching patterns in file "always"
 my &needle = compile-needle("file" => 'always');
-
 =end code
 
 Assumes the given string is a valid path specification, pointing to a
@@ -490,10 +422,8 @@ Note that the filename C<"-"> will be interpreted as "read from STDIN".
 =head3 json-path
 
 =begin code :lang<raku>
-
 # return result of JSON::Path query "auth"
 my &needle = compile-needle("json-path" => 'auth');
-
 =end code
 
 Assumes the given string is a valid
@@ -506,10 +436,8 @@ The generated C<Callable> will expect an C<Associative> haystack (aka, a
 <Hash>) to be passed, and will return a C<Slip> with any results.
 
 =begin code :lang<raku>
-
 # return result of JSON::Path query "auth"
 my &needle = compile-needle({ jp('auth').Slip });
-
 =end code
 
 Alternately, you can also the C<jp()> function.  This returns a specialized
@@ -522,10 +450,8 @@ See "Doing JSON path queries in code needles" for more information.
 =head3 not
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" is NOT found
 my &needle = compile-needle("not" => "bar");
-
 =end code
 
 This is a meta-type: it inverts the result of the result of matching
@@ -534,10 +460,8 @@ of the given needle (which can be anything otherwise acceptable).
 =head3 regex
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" is found
 my &needle = compile-needle("regex" => "bar");
-
 =end code
 
 Assumes the string is a regex specification to be used as a needle in a
@@ -546,10 +470,8 @@ call to C<.contains>.
 =head3 split
 
 =begin code :lang<raku>
-
 # accept if string contains "foo" *and* "bar"
 my &needle = compile-needle("split" => 'foo &bar');
-
 =end code
 
 This is a meta-type: it splits the given string on whitespace and
@@ -558,10 +480,8 @@ interpretes the result as a list of needles.
 =head3 starts-with
 
 =begin code :lang<raku>
-
 # accept haystack if it starts with "bar"
 my &needle = compile-needle("starts-with" => "bar");
-
 =end code
 
 Assumes the string is a needle in a call to C<.starts-with>.
@@ -569,11 +489,9 @@ Assumes the string is a needle in a call to C<.starts-with>.
 =head3 url
 
 =begin code :lang<raku>
-
 # accept if any of the needles at given URL matches
 my &domain = compile-needle("url" => 'raku.org/robots.txt');
 my &url    = compile-needle("url" => 'http://example.com/patterns');
-
 =end code
 
 Interpretes the given string as a URL from which to obtain the needles
@@ -585,10 +503,8 @@ supported by C<curl> can be used in the URL specification.
 =head3 words
 
 =begin code :lang<raku>
-
 # accept haystack if "bar" is found as a word
 my &needle = compile-needle("words" => "bar");
-
 =end code
 
 Assumes the string is a needle that will match if the needle is found
@@ -597,10 +513,8 @@ with word boundaries on either side of the needle.
 =head2 Doing JSON path queries in code needles
 
 =begin code :lang<raku>
-
 # return result of JSON::Path query "auth"
 my &needle = compile-needle("code" => 'jp("auth").Slip');
-
 =end code
 
 The initial call to the C<jp> function will attempt to load the
@@ -638,10 +552,8 @@ The following methods can be called on the C<JP> object:
   .Str               All selected values stringified
 
 =begin code :lang<raku>
-
 # return first and third result of JSON::Path query "auth" as a Slip
 my &needle = compile-needle({ jp('auth')[0,2] });
-
 =end code
 
 Furthermore, you can use postcircumfix C<[ ]> on the C<JP> object to
@@ -652,13 +564,11 @@ select values from the result.
 =head2 implicit2explicit
 
 =begin code :lang<raku>
-
 use Needle::Compile "implicit2explicit";
 
 dd implicit2explicit('foo');    # :contains("foo")
 dd implicit2explicit('§bar');   # :words("bar")
 dd implicit2explicit('!baz$');  # :not(:ends-with("baz"))
-
 =end code
 
 The C<implicit2explicit> subroutine converts an implicit query specification
@@ -675,6 +585,14 @@ code will not actually produce a C<Callable> needle.
 There is not a lot of documentation about RakuAST yet, but there are some
 blog posts, e.g. L<RakuAST for early adopters|https://dev.to/lizmat/rakuast-for-early-adopters-576n>.
 
+=head1 DEBUGGING
+
+The environment variable C<NEEDLE_COMPILE_DEBUG> can be specified with
+2 values:
+
+=item 1 - show deparsed version of the AST that has been created
+=item 2 - also show the actual AST that has been created first
+
 =head1 AUTHOR
 
 Elizabeth Mattijsen <liz@raku.rocks>
@@ -688,7 +606,7 @@ deal to me!
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2024 Elizabeth Mattijsen
+Copyright 2024, 2026 Elizabeth Mattijsen
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 

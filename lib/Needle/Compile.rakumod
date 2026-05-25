@@ -2,8 +2,8 @@
 
 use v6.*;  # Until 6.e is default
 
-use has-word:ver<0.0.6+>:auth<zef:lizmat>;      # has-word all-words
-use String::Utils:ver<0.0.25+>:auth<zef:lizmat> <
+use has-word:ver<0.0.7+>:auth<zef:lizmat>;      # has-word all-words
+use String::Utils:ver<0.0.40+>:auth<zef:lizmat> <
   has-marks is-lowercase is-whitespace non-word nomark
 >;
 
@@ -189,12 +189,12 @@ my multi sub make-method(
 my multi sub make-method(
             Str:D  $name,
   RakuAST::Node:D  $needle,
-                   %_,
+                   %nameds,
 ) {
     my $args := RakuAST::ArgList.new($needle);
 
     for <ignorecase ignoremark global> {
-        $args.push(RakuAST::ColonPair::True.new($_)) if %_{$_};
+        $args.push(RakuAST::ColonPair::True.new($_)) if %nameds{$_};
     }
 
     my $ast := RakuAST::Term::TopicCall.new(
@@ -204,7 +204,7 @@ my multi sub make-method(
       )
     );
 
-    %_<matches> ?? with-matches($ast, $needle) !! $ast
+    %nameds<matches> ?? with-matches($ast, $needle) !! $ast
 }
 
 # Basically do needle && value for matches only semantics
@@ -380,7 +380,7 @@ my multi sub implicit2explicit(Str:D $_) {
 my proto sub handle(|) {*}
 
 # Initial distribution
-my multi sub handle(@raw, %_, :$type = "auto") {
+my multi sub handle(@raw, %nameds, :$type = "auto") {
 
     my @targets;
     my str @regexes;
@@ -412,11 +412,11 @@ my multi sub handle(@raw, %_, :$type = "auto") {
         @targets = @raw.map: { $_ ~~ Pair ?? $_ !! Pair.new($type, $_) }
     }
 
-    my $ast = handle @targets.head, %_;
+    my $ast = handle @targets.head, %nameds;
 
     # All but the first element
     for @targets.skip {
-        my $right := handle $_, %_;
+        my $right := handle $_, %nameds;
 
         $ast = RakuAST::ApplyInfix.new(
           left  => $ast,
@@ -550,7 +550,7 @@ my multi sub handle("equal", Str:D $spec, %_) {
     %_<matches> ?? with-matches($ast, $right) !! $ast
 }
 
-my multi sub handle("file", Str:D $spec, %_) {
+my multi sub handle("file", Str:D $spec, %nameds) {
 
     # helper sub for getting pattern(s) from file
     sub read-patterns($io) {
@@ -563,22 +563,22 @@ my multi sub handle("file", Str:D $spec, %_) {
     }
 
     if $spec eq '-' {
-        handle read-patterns($*IN), %_
+        handle read-patterns($*IN), %nameds
     }
     else {
         (my $io := $spec.IO).e && $io.r
-          ?? handle read-patterns($io), %_
+          ?? handle read-patterns($io), %nameds
           !! fail "Could not read patterns from '$spec'"
     }
 }
 
-my multi sub handle("regex", Str:D $spec is copy, %_) {
+my multi sub handle("regex", Str:D $spec is copy, %nameds) {
     $spec .= trim;
-    my $matches := %_<matches>;
+    my $matches := %nameds<matches>;
 
     if $matches || non-word($spec) {
-        my str $i = ignorecase($spec, %_) ?? ' :i' !! '';
-        my str $m = ignoremark($spec, %_) ?? ' :m' !! '';
+        my str $i = ignorecase($spec, %nameds) ?? ' :i' !! '';
+        my str $m = ignoremark($spec, %nameds) ?? ' :m' !! '';
         my $ast   = "/$i$m $spec /".AST.statements.head.expression;
 
         if $matches {
@@ -614,11 +614,11 @@ my multi sub handle("regex", Str:D $spec is copy, %_) {
         }
     }
     else {
-        handle("contains", $spec, %_)
+        handle("contains", $spec, %nameds)
     }
 }
 
-my multi sub handle("words", Str:D $spec, %_) {
+my multi sub handle("words", Str:D $spec, %nameds) {
     fail("Cannot use word semantics on '$spec'") if non-word($spec);
 
     my $args := RakuAST::ArgList.new(
@@ -626,10 +626,10 @@ my multi sub handle("words", Str:D $spec, %_) {
       RakuAST::StrLiteral.new($spec)
     );
     for <ignorecase ignoremark> {
-        $args.push(RakuAST::ColonPair::True.new($_)) if %_{$_};
+        $args.push(RakuAST::ColonPair::True.new($_)) if %nameds{$_};
     }
 
-    %_<matches>
+    %nameds<matches>
       ?? RakuAST::ApplyInfix.new(
            left  => RakuAST::Call::Name.new(
              name => RakuAST::Name.from-identifier("all-words"),
@@ -714,15 +714,24 @@ my multi sub handle(Str:D $type, Any:D $spec, %_) {
 #-------------------------------------------------------------------------------
 # The frontend
 
+my int $level = %*ENV<NEEDLE_COMPILE_DEBUG> // 0;
 my proto sub compile-needle(|) {
     CATCH { return .Failure }
-    {*}
+    my $ast := {*}
+
+    # Show debug info if debugging
+    if $level {
+        say $ast if $level > 1;
+        say $ast.DEPARSE;
+    }
+
+    $ast.EVAL
 }
 
-my multi sub compile-needle(*%_) {
-    if %_ {
-        if %_ == 1 {
-            wrap-in-block(handle %_.head, %_).EVAL
+my multi sub compile-needle(*%nameds) {
+    if %nameds {
+        if %nameds == 1 {
+            wrap-in-block(handle %nameds.head, %nameds).EVAL
         }
         else {
             fail "Can only specify one pair as a named argument";
@@ -734,18 +743,15 @@ my multi sub compile-needle(*%_) {
 }
 
 my multi sub compile-needle(Positional:D $spec is raw, *%_) {
-#say handle $spec, %_;
-    wrap-in-block(handle $spec, %_).EVAL
+    wrap-in-block(handle $spec, %_)
 }
 
 my multi sub compile-needle($spec, *%_) {
-#say wrap-in-block(handle $spec, %_);
-    wrap-in-block(handle $spec, %_).EVAL
+    wrap-in-block(handle $spec, %_)
 }
 
 my multi sub compile-needle(*@spec, *%_) {
-#say handle @spec, %_;
-    wrap-in-block(handle @spec, %_).EVAL
+    wrap-in-block(handle @spec, %_)
 }
 
 #-------------------------------------------------------------------------------
