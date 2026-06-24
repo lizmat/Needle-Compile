@@ -137,7 +137,7 @@ my &jp = my sub jp-stub(str $pattern) {
     $lock.protect: {  # threadsafe loading of module
         if $json-path<> =:= Any {
             CATCH { fail "JSON::Path not installed" }
-            $json-path := 'use JSON::Path:ver<1.7>; JSON::Path'.EVAL;
+            $json-path := 'use JSON::Path:ver<1.10+>:auth<zef:raku-community-modules>; JSON::Path'.EVAL;
         }
     }
 

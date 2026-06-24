@@ -31,9 +31,9 @@ ok MY::<&implicit2explicit>, 'did implicit2explicit get exported';
 ok MY::<Type>:exists,        'did Type get exported';
 ok MY::<StrType>:exists,     'did StrType get exported';
 
- ok "foo" but Type<words> ~~ Str,     "it's a string";
- ok "foo" but Type<words> ~~ StrType, "it's a butted string";
-nok "foo"                 ~~ StrType, "not a butted string";
+ ok "foo" but Type<words> ~~ Str,          "it's a string";
+ ok ("foo" but Type<words>).does(StrType), "it's a butted string";
+nok "foo"                 ~~ StrType,      "not a butted string";
 
 is-deeply StrType.ACCEPTS("foo"), False, "is 'foo' *NOT* acceptable";
 for @ok-types {

@@ -2,6 +2,10 @@ Revision history for Needle::Compile
 
 {{$NEXT}}
 
+0.0.12  2026-06-24T23:21:46+02:00
+    - Fix test that will break on rakudo 2026.06
+    - Fix JSON::Path developer test
+
 0.0.11  2026-05-25T20:34:26+02:00
     - Add support for :AST named argument to "compile-needle"
       to produce the AST instead of the Callable, for future

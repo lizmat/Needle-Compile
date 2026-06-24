@@ -22,11 +22,11 @@
   "raku": "6.d",
   "resources": [
   ],
-  "source-url": "https://github.com/lizmat/Needle-Compile.git",
+  "source-url": "https://codeberg.org/lizmat/Needle-Compile.git",
   "support": {
-    "bugtracker": "https://github.com/lizmat/Needle-Compile/issues",
+    "bugtracker": "https://codeberg.org/lizmat/Needle-Compile/issues",
     "email": "liz@raku.rocks",
-    "source": "https://github.com/lizmat/Needle-Compile.git"
+    "source": "https://codeberg.org/lizmat/Needle-Compile.git"
   },
   "tags": [
     "SEARCHING",
@@ -36,5 +36,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.11"
+  "version": "0.0.12"
 }
