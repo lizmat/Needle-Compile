@@ -583,12 +583,11 @@ my multi sub handle("regex", Str:D $spec is copy, %nameds) {
 
         if $matches {
 
-            # effectively: .match($spec, :g) ?? $/.map({.Str}).Slip !! False
-            RakuAST::Ternary.new(
-              condition => make-method("match", $ast, %(:global)),
-              then      => RakuAST::ApplyPostfix.new(
+            # effectively: .match($spec, :g).map({.Str}).Slip || False
+            RakuAST::ApplyInfix.new(
+              left  => RakuAST::ApplyPostfix.new(
                 operand => RakuAST::ApplyPostfix.new(
-                  operand => RakuAST::Var::Lexical.new("\$/"),
+                  operand => make-method("match", $ast, %(:global)),
                   postfix => RakuAST::Call::Method.new(
                     name => RakuAST::Name.from-identifier("map"),
                     args => RakuAST::ArgList.new(wrap-in-block(
@@ -604,7 +603,8 @@ my multi sub handle("regex", Str:D $spec is copy, %nameds) {
                   name => RakuAST::Name.from-identifier("Slip")
                 )
               ),
-              else      => RakuAST::Term::Name.new(
+              infix => RakuAST::Infix.new('||'),
+              right => RakuAST::Term::Name.new(
                 RakuAST::Name.from-identifier("False")
               )
             )
