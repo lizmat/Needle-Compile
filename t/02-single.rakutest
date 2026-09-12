@@ -44,8 +44,8 @@ my sub matches(@targets) {
 }
 
 # Compile a needle for the given pattern and do basic sanity test
-sub needle($_, %_) is test-assertion {
-    my $needle := compile-needle($_, |%_);
+sub needle($_, %nameds) is test-assertion {
+    my $needle := compile-needle($_, |%nameds);
     isa-ok $needle, Callable, "Testing $_.raku()";
     $needle
 }
@@ -61,7 +61,7 @@ my sub run-nameds(&code, |c) is test-assertion {
 
 #- code ------------------------------------------------------------------------
 # All tests for code that aren't tested elsewhere
-my sub code($target, $source, $result, $comment, *%_) is test-assertion {
+my sub code($target, $source, $result, $comment, *%nameds) is test-assertion {
     subtest "code: $comment" => {
         my @targets =
           $target but Type("code"),
@@ -70,10 +70,10 @@ my sub code($target, $source, $result, $comment, *%_) is test-assertion {
         ;
         @targets.push("*$target") if $target.starts-with(".");
 
-        plan (2 + ?%_) * @targets;
+        plan (2 + ?%nameds) * @targets;
 
         for @targets {
-            my $needle := needle($_, %_);
+            my $needle := needle($_, %nameds);
             is-deeply $needle($source), $result, "'$source' transformed ok";
         }
     }
@@ -81,8 +81,8 @@ my sub code($target, $source, $result, $comment, *%_) is test-assertion {
 
 #- contains --------------------------------------------------------------------
 # All possible tests for contains
-my sub contains($target, $hit, $miss, $comment, *%_) {
-    my $named := %_ ?? ", :%_.keys.head()" !! "";
+my sub contains($target, $hit, $miss, $comment, *%nameds) {
+    my $named := %nameds ?? ", :%nameds.keys.head()" !! "";
 
     subtest "contains: $comment$named$named" => {
         my $ascode := ".contains('$target')";
@@ -108,31 +108,31 @@ my sub contains($target, $hit, $miss, $comment, *%_) {
         plan 12 * @targets + 4 * @autonots + 4 * @matches;
 
         for @targets {
-            my $needle := needle($_, %_);
+            my $needle := needle($_, %nameds);
             is-deeply $needle($hit),          True,  "hit '$hit'";
             is-deeply $needle("in{$hit}out"), True,  "hit 'in{$hit}out'";
             is-deeply $needle($miss),         False, "miss '$miss'";
 
-            my $not := needle("not" => $_, %_);
+            my $not := needle("not" => $_, %nameds);
             is-deeply $not($hit),          False, "not hit '$hit'";
             is-deeply $not("in{$hit}out"), False, "not hit 'in{$hit}out'";
             is-deeply $not($miss),         True,  "not miss '$miss'";
 
-            my $and := needle("and" => $_, %_);
+            my $and := needle("and" => $_, %nameds);
             is-deeply $and($hit),          True,  "and hit '$hit'";
             is-deeply $and("in{$hit}out"), True,  "and hit 'in{$hit}out'";
             is-deeply $and($miss),         False, "and miss '$miss'";
         }
 
         for @autonots {
-            my $not := needle($_, %_);
+            my $not := needle($_, %nameds);
             is-deeply $not($hit),          False, "! hit '$hit'";
             is-deeply $not("in{$hit}out"), False, "! hit 'in{$hit}out'";
             is-deeply $not($miss),         True,  "! miss '$miss'";
         }
 
         for @matches {
-            my $needle := needle($_, %(:matches, |%_));
+            my $needle := needle($_, %(:matches, |%nameds));
             is-deeply $needle($hit),          slip($hit,), "returned '$hit'";
             is-deeply $needle("in{$hit}out"), slip($hit,), "returned '$hit'";
             is-deeply $needle($miss),         False,       "miss '$miss'";
@@ -142,8 +142,8 @@ my sub contains($target, $hit, $miss, $comment, *%_) {
 
 #- starts-with -----------------------------------------------------------------
 # All possible tests for starts-with
-my sub starts-with($target, $hit, $miss, $comment, *%_) is test-assertion {
-    my $named := %_ ?? ", :%_.keys.head()" !! "";
+my sub starts-with($target, $hit, $miss, $comment, *%nameds) is test-assertion {
+    my $named := %nameds ?? ", :%nameds.keys.head()" !! "";
 
     subtest "starts-with: $comment$named" => {
         my $auto   := "^$target";
@@ -170,31 +170,31 @@ my sub starts-with($target, $hit, $miss, $comment, *%_) is test-assertion {
         plan 12 * @targets + 4 * @autonots + 4 * @matches;
 
         for @targets {
-            my $needle := needle($_, %_);
+            my $needle := needle($_, %nameds);
             is-deeply $needle($hit),    True,  "hit '$hit'";
             is-deeply $needle(" $hit"), False, "miss ' $hit'";
             is-deeply $needle($miss),   False, "miss '$miss'";
 
-            my $not := needle("not" => $_, %_);
+            my $not := needle("not" => $_, %nameds);
             is-deeply $not($hit),    False, "not hit '$hit'";
             is-deeply $not(" $hit"), True,  "not miss ' $hit'";
             is-deeply $not($miss),   True,  "not miss '$miss'";
 
-            my $and := needle("and" => $_, %_);
+            my $and := needle("and" => $_, %nameds);
             is-deeply $and($hit),    True,  "and hit '$hit'";
             is-deeply $and(" $hit"), False, "and miss ' $hit'";
             is-deeply $and($miss),   False, "and miss '$miss'";
         }
 
         for @autonots {
-            my $not := needle($_, %_);
+            my $not := needle($_, %nameds);
             is-deeply $not($hit),    False, "! hit '$hit'";
             is-deeply $not(" $hit"), True,  "! miss ' $hit'";
             is-deeply $not($miss),   True,  "! miss '$miss'";
         }
 
         for @matches {
-            my $needle := needle($_, %(:matches, |%_));
+            my $needle := needle($_, %(:matches, |%nameds));
             is-deeply $needle($hit),    slip($hit,), "returned '$hit'";
             is-deeply $needle(" $hit"), False,       "miss '$hit'";
             is-deeply $needle($miss),   False,       "miss '$miss'";
@@ -204,8 +204,8 @@ my sub starts-with($target, $hit, $miss, $comment, *%_) is test-assertion {
 
 #- ends-with -------------------------------------------------------------------
 # All possible tests for ends-with
-my sub ends-with($target, $hit, $miss, $comment, *%_) is test-assertion {
-    my $named := %_ ?? ", :%_.keys.head()" !! "";
+my sub ends-with($target, $hit, $miss, $comment, *%nameds) is test-assertion {
+    my $named := %nameds ?? ", :%nameds.keys.head()" !! "";
 
     subtest "ends-with: $comment$named" => {
         my $auto   := $target ~ '$';
@@ -232,31 +232,31 @@ my sub ends-with($target, $hit, $miss, $comment, *%_) is test-assertion {
         plan 12 * @targets + 4 * @autonots + 4 * @matches;
 
         for @targets {
-            my $needle := needle($_, %_);
+            my $needle := needle($_, %nameds);
             is-deeply $needle($hit),    True,  "hit '$hit'";
             is-deeply $needle("$hit "), False, "miss '$hit '";
             is-deeply $needle($miss),   False, "miss '$miss'";
 
-            my $not := needle("not" => $_, %_);
+            my $not := needle("not" => $_, %nameds);
             is-deeply $not($hit),    False, "not hit '$hit'";
             is-deeply $not("$hit "), True,  "not miss '$hit '";
             is-deeply $not($miss),   True,  "not miss '$miss'";
 
-            my $and := needle("and" => $_, %_);
+            my $and := needle("and" => $_, %nameds);
             is-deeply $and($hit),    True,  "and hit '$hit'";
             is-deeply $and("$hit "), False, "and miss '$hit '";
             is-deeply $and($miss),   False, "and miss '$miss'";
         }
 
         for @autonots {
-            my $not := needle($_, %_);
+            my $not := needle($_, %nameds);
             is-deeply $not($hit),    False, "! hit '$hit'";
             is-deeply $not("$hit "), True,  "! miss '$hit '";
             is-deeply $not($miss),   True,  "! miss '$miss'";
         }
 
         for @matches {
-            my $needle := needle($_, %(:matches, |%_));
+            my $needle := needle($_, %(:matches, |%nameds));
             is-deeply $needle($hit),    slip($hit,), "returned '$hit'";
             is-deeply $needle("$hit "), False,       "miss '$hit'";
             is-deeply $needle($miss),   False,       "miss '$miss'";
@@ -266,8 +266,8 @@ my sub ends-with($target, $hit, $miss, $comment, *%_) is test-assertion {
 
 #- equal -----------------------------------------------------------------------
 # All possible tests for equal
-my sub equal($target, $hit, $miss, $comment, *%_) is test-assertion {
-    my $named := %_ ?? ", :%_.keys.head()" !! "";
+my sub equal($target, $hit, $miss, $comment, *%nameds) is test-assertion {
+    my $named := %nameds ?? ", :%nameds.keys.head()" !! "";
 
     subtest "equal: $comment$named" => {
         my $auto   := "^$target\$";
@@ -291,31 +291,31 @@ my sub equal($target, $hit, $miss, $comment, *%_) is test-assertion {
         plan 12 * @targets + 4 * @autonots + 4 * @matches;
 
         for @targets {
-            my $needle := needle($_, %_);
+            my $needle := needle($_, %nameds);
             is-deeply $needle($hit),     True,  "hit '$hit'";
             is-deeply $needle(" $hit "), False, "miss ' $hit '";
             is-deeply $needle($miss),    False, "miss '$miss'";
 
-            my $not := needle("not" => $_, %_);
+            my $not := needle("not" => $_, %nameds);
             is-deeply $not($hit),     False, "not hit '$hit'";
             is-deeply $not(" $hit "), True,  "not miss ' $hit '";
             is-deeply $not($miss),    True,  "not miss '$miss'";
 
-            my $and := needle("and" => $_, %_);
+            my $and := needle("and" => $_, %nameds);
             is-deeply $and($hit),     True,  "and hit '$hit'";
             is-deeply $and(" $hit "), False, "and miss ' $hit '";
             is-deeply $and($miss),    False, "and miss '$miss'";
         }
 
         for @autonots {
-            my $not := needle($_, %_);
+            my $not := needle($_, %nameds);
             is-deeply $not($hit),     False, "! hit '$hit'";
             is-deeply $not(" $hit "), True,  "! miss ' $hit '";
             is-deeply $not($miss),    True,  "! miss '$miss'";
         }
 
         for @matches {
-            my $needle := needle($_, %(:matches, |%_));
+            my $needle := needle($_, %(:matches, |%nameds));
             is-deeply $needle($hit),     slip($hit,), "returned '$hit'";
             is-deeply $needle(" $hit "), False,       "miss '$hit'";
             is-deeply $needle($miss),    False,       "miss '$miss'";
@@ -325,8 +325,8 @@ my sub equal($target, $hit, $miss, $comment, *%_) is test-assertion {
 
 #- words -----------------------------------------------------------------------
 # All possible tests for words
-my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
-    my $named := %_ ?? ", :%_.keys.head()" !! "";
+my sub words($target, $hit, $miss, $comment, *%nameds) is test-assertion {
+    my $named := %nameds ?? ", :%nameds.keys.head()" !! "";
 
     subtest "words: $comment$named" => {
         my $auto := "§$target";
@@ -345,21 +345,21 @@ my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
         plan 18 * @targets + 6 * @autonots + 6 * @matches;
 
         for @targets {
-            my $needle := needle($_, %_);
+            my $needle := needle($_, %nameds);
             is-deeply $needle($hit),         True,  "hit '$hit'";
             is-deeply $needle(" $hit "),     True,  "hit ' $hit '";
             is-deeply $needle(":$hit:"),     True,  "hit ':$hit:'";
             is-deeply $needle("oo{$hit}ff"), False, "miss 'oo{$hit}ff'";
             is-deeply $needle($miss),        False, "miss '$miss'";
 
-            my $not := needle("not" => $_, %_ );
+            my $not := needle("not" => $_, %nameds );
             is-deeply $not($hit),         False, "not hit '$hit'";
             is-deeply $not(" $hit "),     False, "not hit ' $hit '";
             is-deeply $not(":$hit:"),     False, "not hit ':$hit:'";
             is-deeply $not("oo{$hit}ff"), True,  "not miss 'oo{$hit}ff'";
             is-deeply $not($miss),        True,  "not miss '$miss'";
 
-            my $and := needle("and" => $_, %_);
+            my $and := needle("and" => $_, %nameds);
             is-deeply $and($hit),         True,  "and hit '$hit'";
             is-deeply $and(" $hit "),     True,  "and hit ' $hit '";
             is-deeply $and(":$hit:"),     True,  "and hit ':$hit:'";
@@ -368,7 +368,7 @@ my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
         }
 
         for @autonots {
-            my $not := needle($_, %_);
+            my $not := needle($_, %nameds);
             is-deeply $not($hit),         False, "! hit '$hit'";
             is-deeply $not(" $hit "),     False, "! hit ' $hit '";
             is-deeply $not(":$hit:"),     False, "! hit ':$hit:'";
@@ -377,7 +377,7 @@ my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
         }
 
         for @matches {
-            my $needle := needle($_, %(:matches, |%_));
+            my $needle := needle($_, %(:matches, |%nameds));
             is-deeply $needle($hit),         slip($hit,), "returned '$hit'";
             is-deeply $needle(" $hit "),     slip($hit,), "returned ' $hit '";
             is-deeply $needle(":$hit:"),     slip($hit,), "returned ':$hit:'";
@@ -389,8 +389,8 @@ my sub words($target, $hit, $miss, $comment, *%_) is test-assertion {
 
 #- regex -----------------------------------------------------------------------
 # All possible tests for regex
-my sub regex($target, $hit, $miss, $comment, *%_) is test-assertion {
-    my $named := %_ ?? ", :%_.keys.head()" !! "";
+my sub regex($target, $hit, $miss, $comment, *%nameds) is test-assertion {
+    my $named := %nameds ?? ", :%nameds.keys.head()" !! "";
 
     subtest "regex: $comment$named" => {
         my $auto := "/ $target /";
@@ -409,31 +409,31 @@ my sub regex($target, $hit, $miss, $comment, *%_) is test-assertion {
         plan 12 * @targets + 4 * @autonots + 4 * @matches;
 
         for @targets {
-            my $needle := needle($_, %_);
+            my $needle := needle($_, %nameds);
             is-deeply $needle($hit),     True,  "hit '$hit'";
             is-deeply $needle(" $hit "), True,  "hit ' $hit '";
             is-deeply $needle($miss),    False, "miss '$miss'";
 
-            my $not := needle("not" => $_, %_ );
+            my $not := needle("not" => $_, %nameds);
             is-deeply $not($hit),     False, "not hit '$hit'";
             is-deeply $not(" $hit "), False, "not hit ' $hit '";
             is-deeply $not($miss),    True,  "not miss '$miss'";
 
-            my $and := needle("and" => $_, %_);
+            my $and := needle("and" => $_, %nameds);
             is-deeply $and($hit),     True,  "and hit '$hit'";
             is-deeply $and(" $hit "), True,  "and hit ' $hit '";
             is-deeply $and($miss),    False, "and miss '$miss'";
         }
 
         for @autonots {
-            my $not := needle($_, %_);
+            my $not := needle($_, %nameds);
             is-deeply $not($hit),     False, "! hit '$hit'";
             is-deeply $not(" $hit "), False, "! hit ' $hit '";
             is-deeply $not($miss),    True,  "! miss '$miss'";
         }
 
         for @matches {
-            my $needle := needle($_, %(:matches, |%_));
+            my $needle := needle($_, %(:matches, |%nameds));
             is-deeply $needle($hit),     slip($hit,), "returned '$hit'";
             is-deeply $needle(" $hit "), slip($hit,), "returned '$hit'";
             is-deeply $needle($miss),    False,       "miss '$miss'";
