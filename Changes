@@ -2,6 +2,10 @@ Revision history for Needle::Compile
 
 {{$NEXT}}
 
+0.0.13  2026-09-12T14:23:01+02:00
+    - Adapt code to changed behaviours of .match (with regards
+      to setting $/) and visibility of %_ in inner scopes
+
 0.0.12  2026-06-24T23:21:46+02:00
     - Fix test that will break on rakudo 2026.06
     - Fix JSON::Path developer test
