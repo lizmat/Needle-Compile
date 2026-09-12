@@ -51,7 +51,7 @@ sub needle($_, %_) is test-assertion {
 }
 
 # Run the given needle specification for all possible named arguments
-INIT my @nameds = (), :ignorecase, :ignoremark, :smartcase, :smartmark;
+my constant @nameds = (), :ignorecase, :ignoremark, :smartcase, :smartmark;
 my sub run-nameds(&code, |c) is test-assertion {
     subtest "all named arguments for &code.name()" => {
         plan +@nameds;

@@ -572,47 +572,60 @@ my multi sub handle("file", Str:D $spec, %nameds) {
     }
 }
 
-my multi sub handle("regex", Str:D $spec is copy, %nameds) {
-    $spec .= trim;
+my multi sub handle("regex", Str:D $specification, %nameds) {
+    my str $spec = $specification.trim;
     my $matches := %nameds<matches>;
 
+    # If multiple matches are needed, or the search string has any
+    # non-word characters, then we need to actually set up a regex
+    # with optional modifiers
     if $matches || non-word($spec) {
+
+        # Set up the AST for the regex
         my str $i = ignorecase($spec, %nameds) ?? ' :i' !! '';
         my str $m = ignoremark($spec, %nameds) ?? ' :m' !! '';
-        my $ast   = "/$i$m $spec /".AST.statements.head.expression;
+        my $ast  := "/$i$m $spec /".AST.statements.head.expression;
 
+        # Multiple matches areb requested, so actually call .match
         if $matches {
-
-            # effectively: .match($spec, :g) ?? $/.map({.Str}).Slip !! False
-            RakuAST::Ternary.new(
-              condition => make-method("match", $ast, %(:global)),
-              then      => RakuAST::ApplyPostfix.new(
+            # effectively: .match($spec, :g).map(*.Str).Slip || False
+            RakuAST::ApplyInfix.new(
+              left  => RakuAST::ApplyPostfix.new(
                 operand => RakuAST::ApplyPostfix.new(
-                  operand => RakuAST::Var::Lexical.new("\$/"),
+                  operand => make-method("match", $ast, %(:global)),
                   postfix => RakuAST::Call::Method.new(
                     name => RakuAST::Name.from-identifier("map"),
-                    args => RakuAST::ArgList.new(wrap-in-block(
-                      RakuAST::Term::TopicCall.new(
-                        RakuAST::Call::Method.new(
+                    args => RakuAST::ArgList.new(
+                      RakuAST::ApplyPostfix.new(
+                        operand => RakuAST::Term::Whatever.new,
+                        postfix => RakuAST::Call::Method.new(
                           name => RakuAST::Name.from-identifier("Str")
                         )
                       )
-                     ))
+                    )
                   )
                 ),
                 postfix => RakuAST::Call::Method.new(
                   name => RakuAST::Name.from-identifier("Slip")
                 )
               ),
-              else      => RakuAST::Term::Name.new(
+              infix => RakuAST::Infix.new('||'),
+              right => RakuAST::Term::Name.new(
                 RakuAST::Name.from-identifier("False")
               )
             )
         }
+
+        # With a single match, we just need to call .contains without
+        # any nameds (as these are already incorporated into the AST)
         else {
             make-method("contains", $ast, %())
         }
     }
+
+    # Simple string search should be sufficient, call .contains with,
+    # adding any modifiers as named arguments (as .contains can handle
+    # these directly without using regexes)
     else {
         handle("contains", $spec, %nameds)
     }
